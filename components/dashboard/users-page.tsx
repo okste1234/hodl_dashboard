@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useUsers } from "@/hooks/useUsers"
 
 const users = [
   { id: "USR-001", name: "Jasper Okwu", email: "jasper@mail.com", wallet: "$22,199.09", vault: "$22,199.00", loans: 2, status: "active", kyc: "verified", joined: "Jan 12, 2025" },
@@ -74,6 +75,9 @@ export function UsersPage() {
       u.id.toLowerCase().includes(search.toLowerCase())
   )
 
+  const { data: usersData } = useUsers()
+  console.log(useState);
+  
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
