@@ -3,12 +3,11 @@ import { useMutation } from "@tanstack/react-query";
 
 export function useLogin() {
   return useMutation({
-    mutationFn: async (payload: { email: string; password: string }) => {
-      const { data } = await api.post('/auth/login', payload)
+    mutationFn: async (payload: { email: string; isEmailVerified: boolean }) => {
+      const { data } = await api.post('users/auth', payload)
       return data
     },
     onSuccess: () => {
-      // Cookie already set by backend
       window.location.href = '/dashboard'
     },
   })
