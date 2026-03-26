@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -11,22 +11,23 @@ import {
   ResponsiveContainer,
 } from "recharts"
 
-const data = [
-  { month: "Jan", revenue: 186000, loans: 142000, earnings: 44000 },
-  { month: "Feb", revenue: 205000, loans: 158000, earnings: 47000 },
-  { month: "Mar", revenue: 237000, loans: 176000, earnings: 61000 },
-  { month: "Apr", revenue: 198000, loans: 149000, earnings: 49000 },
-  { month: "May", revenue: 256000, loans: 195000, earnings: 61000 },
-  { month: "Jun", revenue: 289000, loans: 218000, earnings: 71000 },
-  { month: "Jul", revenue: 312000, loans: 240000, earnings: 72000 },
-  { month: "Aug", revenue: 278000, loans: 210000, earnings: 68000 },
-  { month: "Sep", revenue: 305000, loans: 232000, earnings: 73000 },
-  { month: "Oct", revenue: 340000, loans: 260000, earnings: 80000 },
-  { month: "Nov", revenue: 318000, loans: 243000, earnings: 75000 },
-  { month: "Dec", revenue: 284200, loans: 216000, earnings: 68200 },
-]
+type RevenueChartProps = {
+  revenueVsLoanVolume: {
+    month: string
+    revenue: number
+    loanVolume: number
+  }[]
+}
 
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; color: string; name: string }>; label?: string }) {
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: Array<{ value: number; color: string; name: string }>
+  label?: string
+}) {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-lg border border-border bg-popover p-3 shadow-lg">
@@ -49,7 +50,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   return null
 }
 
-export function RevenueChart() {
+export function RevenueChart({ revenueVsLoanVolume }: RevenueChartProps) {
   return (
     <Card className="border-border bg-card">
       <CardHeader className="pb-2">
@@ -61,7 +62,10 @@ export function RevenueChart() {
       <CardContent className="pt-0">
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={revenueVsLoanVolume}
+              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            >
               <defs>
                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="oklch(0.72 0.19 155)" stopOpacity={0.3} />
@@ -97,7 +101,7 @@ export function RevenueChart() {
               />
               <Area
                 type="monotone"
-                dataKey="loans"
+                dataKey="loanVolume"
                 name="Loan Volume"
                 stroke="oklch(0.65 0.15 220)"
                 fillOpacity={1}

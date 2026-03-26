@@ -1,29 +1,47 @@
-"use client"
+'use client'
 
-import { KPICards } from "./kpi-cards"
-import { RevenueChart } from "./revenue-chart"
-import { ActivityChart } from "./activity-chart"
-import { RecentTransactions } from "./recent-transactions"
-import { PlatformStats } from "./platform-stats"
+import { KPICards } from './kpi-cards'
+import { RevenueChart } from './revenue-chart'
+import { ActivityChart } from './activity-chart'
+import { RecentTransactions } from './recent-transactions'
+import { PlatformStats } from './platform-stats'
+import { useStatsOverview } from '@/hooks/useStatsOverview'
 
 export function OverviewPage() {
+  const { data, isLoading, error } = useStatsOverview()
+
+  if (isLoading) {
+    return <p>Loading overview...</p>
+  }
+
+  if (error || !data) {
+    return <p className="text-red-600">Failed to load overview data</p>
+  }
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Header */}
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold text-foreground">Welcome back, Admin</h1>
-        <p className="text-sm text-muted-foreground">Here is what is happening across the Hodl platform today.</p>
+        <p className="text-sm text-muted-foreground">
+          Here is what is happening across the Hodl platform today.
+        </p>
       </div>
 
-      <KPICards />
+      {/* KPI Cards */}
+      <KPICards stats={data} />
 
+      {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <RevenueChart />
-        <ActivityChart />
+        <RevenueChart revenueVsLoanVolume={data.charts.revenueVsLoanVolume} />
+        <ActivityChart userWeeklyActivity={data.charts.userWeeklyActivity} />
       </div>
 
+      {/* Platform Stats / Risk Overview */}
       <PlatformStats />
 
-      <RecentTransactions />
+      {/* Recent Transactions */}
+      <RecentTransactions  />
     </div>
   )
 }

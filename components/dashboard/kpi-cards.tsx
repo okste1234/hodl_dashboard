@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -10,42 +10,66 @@ import {
   ArrowDownRight,
 } from "lucide-react"
 
-const kpis = [
-  {
-    title: "Total Users",
-    value: "24,521",
-    change: "+12.5%",
-    trend: "up" as const,
-    icon: Users,
-    subtitle: "432 new this week",
-  },
-  {
-    title: "Total Value Locked",
-    value: "$18.4M",
-    change: "+8.2%",
-    trend: "up" as const,
-    icon: Wallet,
-    subtitle: "Across all vaults",
-  },
-  {
-    title: "Active Loans",
-    value: "1,847",
-    change: "+3.1%",
-    trend: "up" as const,
-    icon: CreditCard,
-    subtitle: "$4.2M outstanding",
-  },
-  {
-    title: "Platform Revenue",
-    value: "$284,200",
-    change: "-2.4%",
-    trend: "down" as const,
-    icon: TrendingUp,
-    subtitle: "This month",
-  },
-]
+type OverviewStats = {
+  users: {
+    total: number
+    growthPercentThisWeek: string
+  }
+  tvl: {
+    total: string
+    growthPercentThisWeek: string
+  }
+  activeLoans: {
+    total: number
+    amountBorrowed: string
+    growthPercentThisWeek: string
+  }
+  platformRevenue: {
+    total: string
+    growthPercentThisMonth: string
+  }
+}
 
-export function KPICards() {
+type KPICardsProps = {
+  stats: OverviewStats
+}
+
+export function KPICards({ stats }: KPICardsProps) {
+  const kpis = [
+    {
+      title: "Total Users",
+      value: stats.users.total.toLocaleString(),
+      change: stats.users.growthPercentThisWeek,
+      trend: stats.users.growthPercentThisWeek.startsWith("+") ? "up" : "down" as const,
+      icon: Users,
+      subtitle: `${Math.floor((stats.users.total * parseFloat(stats.users.growthPercentThisWeek)) / 100)} new this week`,
+    },
+    {
+      title: "Total Value Locked",
+      value: `$${Number(stats.tvl.total).toLocaleString()}`,
+      change: stats.tvl.growthPercentThisWeek,
+      trend: stats.tvl.growthPercentThisWeek.startsWith("+") ? "up" : "down" as const,
+      icon: Wallet,
+      subtitle: "Across all vaults",
+    },
+    {
+      title: "Active Loans",
+      value: stats.activeLoans.total.toLocaleString(),
+      change: stats.activeLoans.growthPercentThisWeek,
+      trend: stats.activeLoans.growthPercentThisWeek.startsWith("+") ? "up" : "down" as const,
+      icon: CreditCard,
+      subtitle: `$${Number(stats.activeLoans.amountBorrowed).toLocaleString()} outstanding`,
+    },
+    {
+      title: "Platform Revenue",
+      value: `$${Number(stats.platformRevenue.total).toLocaleString()}`,
+      change: stats.platformRevenue.growthPercentThisMonth,
+      trend: stats.platformRevenue.growthPercentThisMonth.startsWith("+") ? "up" : "down" as const,
+      icon: TrendingUp,
+      subtitle: "This month",
+    },
+  ]
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {kpis.map((kpi) => (
