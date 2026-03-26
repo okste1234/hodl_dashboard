@@ -9,25 +9,29 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
+  // ❌ remove for now (only needed for cookies)
+  // withCredentials: true,
 });
 
-// Request interceptor
-api.interceptors.request.use(
-  (config) => {
-    // Optional: attach token later
-    // const token = localStorage.getItem("token");
-    // if (token) config.headers.Authorization = `Bearer ${token}`;
+// ✅ Request interceptor
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("accessToken");
 
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+    // 🔒 prevent "null"/"undefined"
+    if (token && token !== "undefined" && token !== "null") {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
 
-// Response interceptor
+  return config;
+});
+
+// ✅ Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 🔌 Network error
     if (!error.response) {
       if (process.env.NODE_ENV === "development") {
         console.error("Network error or server unavailable");
@@ -38,11 +42,19 @@ api.interceptors.response.use(
     const status = error.response.status;
     const url = error.config?.url || "";
 
-    const isAuthRoute = url.includes("/users/auth") 
+    // 🔐 More flexible auth route detection
+    const isAuthRoute =
+      url.includes("/auth") || url.includes("/login") || url.includes("/verify");
 
     if (status === 401 && !isAuthRoute) {
       if (typeof window !== "undefined") {
-        window.location.href = "/";
+        // 🧹 Clear bad token
+        localStorage.removeItem("accessToken");
+
+        // 🚫 Prevent redirect loop
+        if (window.location.pathname !== "/") {
+          window.location.href = "/";
+        }
       }
     }
 
