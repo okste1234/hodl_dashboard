@@ -27,6 +27,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 const mainNav = [
   { title: "Overview", icon: LayoutDashboard, id: "overview", badge: null },
@@ -42,21 +43,32 @@ const secondaryNav = [
   { title: "Settings", icon: Settings, id: "settings", badge: null },
 ]
 
+type Admin = {
+  id: string;
+  email: string;
+  name: string;
+};
+
 interface AppSidebarProps {
   activeTab: string
   onTabChange: (tab: string) => void
 }
 
 export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
+  const queryClient = useQueryClient();
+
+  const { data: admin } = useQuery<Admin>({
+    queryKey: ["admin"],
+    initialData: () => queryClient.getQueryData(["admin"]), // optional
+    enabled: false,
+  });
+  console.log("Admin data in sidebar:", admin) // Debug log to check admin data
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
-            <TrendingUp className="size-4 text-primary-foreground" />
-          </div>
+            <img src="/logos/App_Icon.png" className="w-6 h-6" alt="HODL" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold text-foreground tracking-tight">HODL</span>
             <span className="text-xs text-muted-foreground">Admin Panel</span>
           </div>
         </div>
@@ -129,8 +141,8 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
                 <AvatarFallback className="bg-primary/20 text-primary text-xs">AD</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-foreground">Admin</span>
-                <span className="text-xs text-muted-foreground">admin@joinhodl.com</span>
+                <span className="text-sm font-medium text-foreground">{admin?.name || "Admin"}</span>
+                <span className="text-xs text-muted-foreground">{admin?.email || "@.com"}</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -50,7 +50,7 @@ export default function Root() {
         onSuccess: (data) => {
           // 🔐 Store token
           if (data.accessToken) {
-            localStorage.setItem("accessToken", data.accessToken);
+            localStorage.setItem("adm:accessToken", data.accessToken);
 
             // 👤 Optional: store admin
             queryClient.setQueryData(["admin"], data.admin);
