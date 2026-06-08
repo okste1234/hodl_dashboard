@@ -21,13 +21,14 @@ import {
 } from "@/components/ui/select"
 import { Shield, AlertTriangle, CheckCircle, Clock, Eye, Filter, Inbox } from "lucide-react"
 import { useCompliance } from "@/hooks/useCompliance"
-import { ComplianceKycStatus } from "@/types/admin"
+import { ComplianceKycStatus, type AdminKycItem } from "@/types/admin"
 import { formatDate } from "@/lib/format"
 import {
   TableLoadingRows,
   TableEmptyRow,
   TableErrorRow,
 } from "@/components/dashboard/data-state"
+import { KycReviewSheet } from "@/components/dashboard/kyc-review-sheet"
 
 // NOTE: /admin/compliance 400s when limit/offset are supplied — KycRequestsFilterDto
 // (kyc-filter.dto.ts) is missing @Type(() => Number) on its @IsInt limit/offset
@@ -49,6 +50,7 @@ function getKycStatusBadge(status: string) {
 
 export function CompliancePage() {
   const [status, setStatus] = useState<string>(STATUS_ALL)
+  const [selectedKyc, setSelectedKyc] = useState<AdminKycItem | null>(null)
 
   const filters = useMemo(
     () => ({
@@ -163,8 +165,14 @@ export function CompliancePage() {
                     <TableCell>{getKycStatusBadge(req.status)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {/* Review/Approve mutations land when the backend KYC-review route is added. */}
-                        <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground">
+                        {/* Opens the KYC review sheet. Approve/Reject inside it are UI-only
+                            until the backend KYC-review route is added. */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedKyc(req)}
+                          className="h-7 text-xs text-foreground"
+                        >
                           <Eye className="mr-1 size-3" /> Review
                         </Button>
                       </div>
@@ -208,6 +216,8 @@ export function CompliancePage() {
           </div>
         </CardContent>
       </Card>
+
+      <KycReviewSheet request={selectedKyc} onOpenChange={(open) => !open && setSelectedKyc(null)} />
     </div>
   )
 }

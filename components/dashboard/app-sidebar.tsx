@@ -11,6 +11,12 @@ import {
   TrendingUp,
   LogOut,
   Bell,
+  Wallet,
+  Sprout,
+  Banknote,
+  Gift,
+  Megaphone,
+  LifeBuoy,
 } from "lucide-react"
 import {
   Sidebar,
@@ -33,9 +39,18 @@ import { logout } from "@/lib/auth"
 const mainNav = [
   { title: "Overview", icon: LayoutDashboard, id: "overview", badge: null },
   { title: "Users", icon: Users, id: "users", badge: null },
+  { title: "Wallets", icon: Wallet, id: "wallets", badge: null },
   { title: "Loans", icon: CreditCard, id: "loans", badge: null },
   { title: "Transactions", icon: ArrowLeftRight, id: "transactions", badge: null },
   { title: "Vaults & Earnings", icon: Vault, id: "vaults", badge: null },
+  { title: "Yield Markets", icon: Sprout, id: "yield", badge: null },
+  { title: "Cash & Ramps", icon: Banknote, id: "cash", badge: null },
+]
+
+const growthNav = [
+  { title: "Referrals", icon: Gift, id: "referrals", badge: null },
+  { title: "Announcements", icon: Megaphone, id: "announcements", badge: null },
+  { title: "Support", icon: LifeBuoy, id: "support", badge: null },
 ]
 
 const secondaryNav = [
@@ -92,6 +107,29 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNav.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    isActive={activeTab === item.id}
+                    onClick={() => onTabChange(item.id)}
+                    tooltip={item.title}
+                  >
+                    <item.icon className="size-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                  {item.badge && (
+                    <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
+                  )}
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Growth</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {growthNav.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}

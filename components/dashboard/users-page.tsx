@@ -36,6 +36,7 @@ import {
   TableEmptyRow,
   TableErrorRow,
 } from "@/components/dashboard/data-state"
+import { UserDetailSheet } from "@/components/dashboard/user-detail-sheet"
 
 // NOTE: /admin/users 400s when limit/offset are supplied (UserFilterDto is
 // missing @Type(() => Number) — see Technical Findings). Until that backend fix
@@ -102,6 +103,7 @@ export function UsersPage() {
   )
 
   const { data, isLoading, isError, refetch } = useUsers(filters)
+  const [selectedUser, setSelectedUser] = useState<AdminUserItem | null>(null)
 
   const stats = data?.stats
   const items = data?.items ?? []
@@ -235,7 +237,7 @@ export function UsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover border-border">
-                          <DropdownMenuItem className="text-foreground">
+                          <DropdownMenuItem className="text-foreground" onClick={() => setSelectedUser(user)}>
                             <Eye className="mr-2 size-3.5" /> View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-foreground">
@@ -266,6 +268,8 @@ export function UsersPage() {
           )}
         </CardContent>
       </Card>
+
+      <UserDetailSheet user={selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)} />
     </div>
   )
 }

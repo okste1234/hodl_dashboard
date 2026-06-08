@@ -22,6 +22,19 @@ export function formatNumber(value: number | null | undefined): string {
   return value.toLocaleString("en-US")
 }
 
+/** Token amount with its symbol, e.g. "6.42 ETH" (trims to 4 dp). */
+export function formatToken(amount: number | null | undefined, symbol: string): string {
+  if (amount === null || amount === undefined || Number.isNaN(amount)) return "—"
+  return `${amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${symbol}`
+}
+
+/** Signed percentage for 24h-change style deltas, e.g. "+2.1%" / "-1.4%". */
+export function formatDelta(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—"
+  const sign = value > 0 ? "+" : ""
+  return `${sign}${value.toFixed(1)}%`
+}
+
 export function formatPercent(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === "") return "—"
   const s = String(value)

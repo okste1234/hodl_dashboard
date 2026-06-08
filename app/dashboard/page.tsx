@@ -8,9 +8,15 @@ import { AppSidebar } from "@/components/dashboard/app-sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { OverviewPage } from "@/components/dashboard/overview-page"
 import { UsersPage } from "@/components/dashboard/users-page"
+import { WalletsPage } from "@/components/dashboard/wallets-page"
 import { LoansPage } from "@/components/dashboard/loans-page"
 import { TransactionsPage } from "@/components/dashboard/transactions-page"
 import { VaultsPage } from "@/components/dashboard/vaults-page"
+import { YieldPage } from "@/components/dashboard/yield-page"
+import { CashPage } from "@/components/dashboard/cash-page"
+import { ReferralsPage } from "@/components/dashboard/referrals-page"
+import { AnnouncementsPage } from "@/components/dashboard/announcements-page"
+import { SupportPage } from "@/components/dashboard/support-page"
 import { CompliancePage } from "@/components/dashboard/compliance-page"
 import { AnalyticsPage } from "@/components/dashboard/analytics-page"
 import { SettingsPage } from "@/components/dashboard/settings-page"
@@ -22,12 +28,24 @@ function DashboardContent({ activeTab }: { activeTab: string }) {
       return <OverviewPage />
     case "users":
       return <UsersPage />
+    case "wallets":
+      return <WalletsPage />
     case "loans":
       return <LoansPage />
     case "transactions":
       return <TransactionsPage />
     case "vaults":
       return <VaultsPage />
+    case "yield":
+      return <YieldPage />
+    case "cash":
+      return <CashPage />
+    case "referrals":
+      return <ReferralsPage />
+    case "announcements":
+      return <AnnouncementsPage />
+    case "support":
+      return <SupportPage />
     case "compliance":
       return <CompliancePage />
     case "analytics":
