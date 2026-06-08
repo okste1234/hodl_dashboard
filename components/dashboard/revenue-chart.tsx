@@ -40,7 +40,7 @@ function CustomTooltip({
             />
             <span className="text-muted-foreground">{entry.name}:</span>
             <span className="font-medium text-foreground">
-              ${(entry.value / 1000).toFixed(0)}k
+              ₦{(entry.value / 1000).toFixed(0)}k
             </span>
           </div>
         ))}
@@ -87,7 +87,7 @@ export function RevenueChart({ revenueVsLoanVolume }: RevenueChartProps) {
                 tick={{ fontSize: 11, fill: "oklch(0.60 0 0)" }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                tickFormatter={(value) => `₦${(value / 1000).toFixed(0)}k`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Area

@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,23 +12,58 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Shield, AlertTriangle, CheckCircle, Clock, Eye } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Shield, AlertTriangle, CheckCircle, Clock, Eye, Filter, Inbox } from "lucide-react"
+import { useCompliance } from "@/hooks/useCompliance"
+import { ComplianceKycStatus } from "@/types/admin"
+import { formatDate } from "@/lib/format"
+import {
+  TableLoadingRows,
+  TableEmptyRow,
+  TableErrorRow,
+} from "@/components/dashboard/data-state"
 
-const kycRequests = [
-  { id: "KYC-401", user: "Kola Adeyemi", submitted: "Feb 22, 2026", docType: "National ID", status: "pending", risk: "low" },
-  { id: "KYC-402", user: "Tunde Balogun", submitted: "Feb 22, 2026", docType: "Passport", status: "pending", risk: "medium" },
-  { id: "KYC-403", user: "Grace Nwosu", submitted: "Feb 21, 2026", docType: "Driver License", status: "pending", risk: "low" },
-  { id: "KYC-404", user: "Ibrahim Musa", submitted: "Feb 21, 2026", docType: "Voter Card", status: "under-review", risk: "high" },
-  { id: "KYC-405", user: "Blessing Okafor", submitted: "Feb 20, 2026", docType: "National ID", status: "pending", risk: "low" },
-]
+// NOTE: /admin/compliance 400s when limit/offset are supplied — KycRequestsFilterDto
+// (kyc-filter.dto.ts) is missing @Type(() => Number) on its @IsInt limit/offset
+// (same class of bug as UserFilterDto; see Technical Findings F2). Until the
+// backend fix lands we omit pagination params and render the server default page.
+const STATUS_ALL = "all"
 
-const flaggedTransactions = [
-  { id: "FLG-101", user: "Unknown Wallet", amount: "$25,000", reason: "Velocity check exceeded", severity: "high", time: "1 hour ago" },
-  { id: "FLG-102", user: "Chidi Eze", amount: "\u20A68,000,000", reason: "Above daily limit", severity: "medium", time: "3 hours ago" },
-  { id: "FLG-103", user: "New Account", amount: "$12,500", reason: "Large first transaction", severity: "medium", time: "5 hours ago" },
-]
+function getKycStatusBadge(status: string) {
+  const s = status?.toLowerCase()
+  if (s === "approved" || s === "completed") {
+    return <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px] capitalize">{status}</Badge>
+  }
+  if (s === "declined" || s === "failed" || s === "expired") {
+    return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] capitalize">{status}</Badge>
+  }
+  // created / pending
+  return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px] capitalize">{status || "—"}</Badge>
+}
 
 export function CompliancePage() {
+  const [status, setStatus] = useState<string>(STATUS_ALL)
+
+  const filters = useMemo(
+    () => ({
+      status: status === STATUS_ALL ? undefined : (status as ComplianceKycStatus),
+    }),
+    [status]
+  )
+
+  const { data, isLoading, isError, refetch } = useCompliance(filters)
+
+  const stats = data?.stats
+  const items = data?.items ?? []
+  const total = data?.total ?? 0
+  const colCount = 5
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
@@ -42,7 +78,7 @@ export function CompliancePage() {
               <Clock className="size-4 text-warning" />
               <p className="text-xs text-muted-foreground uppercase tracking-wider">KYC Pending</p>
             </div>
-            <p className="mt-1 text-2xl font-semibold text-warning">342</p>
+            <p className="mt-1 text-2xl font-semibold text-warning">{stats ? stats.totalKycPending.toLocaleString() : "—"}</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
@@ -51,7 +87,7 @@ export function CompliancePage() {
               <AlertTriangle className="size-4 text-destructive" />
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Flagged Tx</p>
             </div>
-            <p className="mt-1 text-2xl font-semibold text-destructive">3</p>
+            <p className="mt-1 text-2xl font-semibold text-destructive">{stats ? stats.flaggedTransactions.toLocaleString() : "—"}</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
@@ -60,7 +96,7 @@ export function CompliancePage() {
               <CheckCircle className="size-4 text-success" />
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Verified Today</p>
             </div>
-            <p className="mt-1 text-2xl font-semibold text-success">28</p>
+            <p className="mt-1 text-2xl font-semibold text-success">{stats ? stats.usersVerifiedToday.toLocaleString() : "—"}</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
@@ -69,7 +105,7 @@ export function CompliancePage() {
               <Shield className="size-4 text-primary" />
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Risk Score</p>
             </div>
-            <p className="mt-1 text-2xl font-semibold text-primary">Low</p>
+            <p className="mt-1 text-2xl font-semibold text-primary">{stats ? stats.riskedScore : "—"}</p>
           </CardContent>
         </Card>
       </div>
@@ -78,71 +114,78 @@ export function CompliancePage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium text-foreground">KYC Verification Queue</CardTitle>
-            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px]">
-              {kycRequests.length} pending
-            </Badge>
+            <Select
+              value={status}
+              onValueChange={(v) => setStatus(v)}
+            >
+              <SelectTrigger className="h-8 w-[140px] bg-secondary border-border text-sm">
+                <Filter className="mr-1 size-3" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value={STATUS_ALL}>All Status</SelectItem>
+                {Object.values(ComplianceKycStatus).map((s) => (
+                  <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="text-xs text-muted-foreground">ID</TableHead>
                 <TableHead className="text-xs text-muted-foreground">User</TableHead>
-                <TableHead className="text-xs text-muted-foreground">Document</TableHead>
+                <TableHead className="text-xs text-muted-foreground">KYC Tier</TableHead>
                 <TableHead className="text-xs text-muted-foreground">Submitted</TableHead>
-                <TableHead className="text-xs text-muted-foreground">Risk</TableHead>
                 <TableHead className="text-xs text-muted-foreground">Status</TableHead>
                 <TableHead className="text-xs text-muted-foreground text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {kycRequests.map((req) => (
-                <TableRow key={req.id} className="border-border">
-                  <TableCell className="text-sm font-mono text-primary">{req.id}</TableCell>
-                  <TableCell className="text-sm text-foreground">{req.user}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{req.docType}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{req.submitted}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] ${
-                        req.risk === "high"
-                          ? "bg-destructive/10 text-destructive border-destructive/20"
-                          : req.risk === "medium"
-                          ? "bg-warning/10 text-warning border-warning/20"
-                          : "bg-success/10 text-success border-success/20"
-                      }`}
-                    >
-                      {req.risk}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] ${
-                        req.status === "pending"
-                          ? "bg-warning/10 text-warning border-warning/20"
-                          : "bg-chart-2/10 text-chart-2 border-chart-2/20"
-                      }`}
-                    >
-                      {req.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground">
-                        <Eye className="mr-1 size-3" /> Review
-                      </Button>
-                      <Button size="sm" className="h-7 bg-primary text-primary-foreground text-xs">
-                        Approve
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {isLoading ? (
+                <TableLoadingRows cols={colCount} />
+              ) : isError ? (
+                <TableErrorRow colSpan={colCount} onRetry={() => refetch()} message="Failed to load KYC requests." />
+              ) : items.length === 0 ? (
+                <TableEmptyRow colSpan={colCount} message="No KYC requests match your filters." />
+              ) : (
+                items.map((req, i) => (
+                  <TableRow key={`${req.user.email}-${i}`} className="border-border">
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-foreground">{req.user.name ?? "—"}</span>
+                        <span className="text-xs text-muted-foreground">{req.user.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground capitalize">{req.kycTier?.replace(/_/g, " ") ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{formatDate(req.createdAt)}</TableCell>
+                    <TableCell>{getKycStatusBadge(req.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Review/Approve mutations land when the backend KYC-review route is added. */}
+                        <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground">
+                          <Eye className="mr-1 size-3" /> Review
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
+          {!isLoading && !isError && total > 0 && (
+            <div className="flex items-center justify-between gap-3 border-t border-border px-1 pt-3">
+              <p className="text-xs text-muted-foreground">
+                Showing {items.length} of {total.toLocaleString()}
+              </p>
+              {total > items.length && (
+                <p className="text-xs text-muted-foreground">
+                  Pagination pending a backend fix to <span className="font-mono">KycRequestsFilterDto</span>.
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -151,38 +194,17 @@ export function CompliancePage() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium text-foreground">Flagged Transactions (AML)</CardTitle>
             <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px]">
-              {flaggedTransactions.length} alerts
+              {stats ? `${stats.flaggedTransactions} alerts` : "—"}
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="flex flex-col gap-3">
-            {flaggedTransactions.map((flag) => (
-              <div key={flag.id} className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`flex size-8 items-center justify-center rounded-lg ${
-                    flag.severity === "high" ? "bg-destructive/10" : "bg-warning/10"
-                  }`}>
-                    <AlertTriangle className={`size-4 ${
-                      flag.severity === "high" ? "text-destructive" : "text-warning"
-                    }`} />
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">{flag.user}</span>
-                      <span className="text-sm font-mono text-foreground">{flag.amount}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{flag.reason}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{flag.time}</span>
-                  <Button size="sm" variant="outline" className="h-7 border-border bg-secondary text-xs text-foreground">
-                    Investigate
-                  </Button>
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+            <Inbox className="size-6 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">No AML alerts feed available yet.</p>
+            <p className="text-xs text-muted-foreground">
+              The dedicated alerts endpoint is not exposed by the backend. Flagged count above is sourced from compliance stats.
+            </p>
           </div>
         </CardContent>
       </Card>

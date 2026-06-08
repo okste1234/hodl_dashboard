@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import {
   Table,
@@ -14,38 +13,42 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Search, AlertTriangle, Eye, MoreHorizontal } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { AlertTriangle, Eye, MoreHorizontal, Filter } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useLoans } from "@/hooks/useLoans"
+import { LoanStatusSort } from "@/types/admin"
+import { formatNaira, formatDate, formatPercent } from "@/lib/format"
+import {
+  TableLoadingRows,
+  TableEmptyRow,
+  TableErrorRow,
+  TablePagination,
+} from "@/components/dashboard/data-state"
 
-const loans = [
-  { id: "LN-0001", user: "Jasper Okwu", principal: "\u20A6500,000", collateral: "$450", ltv: 65, rate: "12%", status: "active", due: "Mar 15, 2026", health: 92 },
-  { id: "LN-0002", user: "Amara Obi", principal: "\u20A61,200,000", collateral: "$1,200", ltv: 70, rate: "14%", status: "active", due: "Apr 20, 2026", health: 85 },
-  { id: "LN-0003", user: "Fatima Bello", principal: "\u20A6800,000", collateral: "$680", ltv: 75, rate: "15%", status: "at-risk", due: "Feb 28, 2026", health: 42 },
-  { id: "LN-0004", user: "Ngozi Mba", principal: "\u20A62,000,000", collateral: "$2,100", ltv: 60, rate: "11%", status: "active", due: "Jun 10, 2026", health: 96 },
-  { id: "LN-0005", user: "Chidi Eze", principal: "\u20A6350,000", collateral: "$280", ltv: 80, rate: "16%", status: "defaulted", due: "Jan 05, 2026", health: 0 },
-  { id: "LN-0006", user: "Aisha Suleiman", principal: "\u20A6900,000", collateral: "$900", ltv: 68, rate: "13%", status: "active", due: "May 18, 2026", health: 88 },
-  { id: "LN-0007", user: "Emeka Udo", principal: "\u20A6150,000", collateral: "$120", ltv: 72, rate: "14%", status: "repaid", due: "Dec 01, 2025", health: 100 },
-  { id: "LN-0008", user: "Kola Adeyemi", principal: "\u20A6600,000", collateral: "$520", ltv: 78, rate: "15%", status: "at-risk", due: "Mar 01, 2026", health: 38 },
-]
+const PAGE_SIZE = 10
+const STATUS_ALL = "all"
 
 function getStatusBadge(status: string) {
-  switch (status) {
-    case "active":
-      return <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px]">Active</Badge>
-    case "at-risk":
-      return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px]">At Risk</Badge>
-    case "defaulted":
-      return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px]">Defaulted</Badge>
-    case "repaid":
-      return <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-[10px]">Repaid</Badge>
-    default:
-      return null
+  const s = status?.toUpperCase()
+  if (s === "ACTIVE") {
+    return <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px]">Active</Badge>
   }
+  if (s === "REPAID") {
+    return <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-[10px]">Repaid</Badge>
+  }
+  return <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[10px]">{status || "—"}</Badge>
 }
 
 function getHealthColor(health: number) {
@@ -55,13 +58,24 @@ function getHealthColor(health: number) {
 }
 
 export function LoansPage() {
-  const [search, setSearch] = useState("")
+  const [status, setStatus] = useState<string>(STATUS_ALL)
+  const [offset, setOffset] = useState(0)
 
-  const filtered = loans.filter(
-    (l) =>
-      l.user.toLowerCase().includes(search.toLowerCase()) ||
-      l.id.toLowerCase().includes(search.toLowerCase())
+  const filters = useMemo(
+    () => ({
+      status: status === STATUS_ALL ? undefined : (status as LoanStatusSort),
+      limit: PAGE_SIZE,
+      offset,
+    }),
+    [status, offset]
   )
+
+  const { data, isLoading, isError, isFetching, refetch } = useLoans(filters)
+
+  const stats = data?.stats
+  const items = data?.items ?? []
+  const total = data?.total ?? 0
+  const colCount = 8
 
   return (
     <div className="flex flex-col gap-6">
@@ -73,33 +87,31 @@ export function LoansPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <Card className="border-border bg-card">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Active Loans</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">1,847</p>
-            <p className="mt-1 text-xs text-muted-foreground">\u20A64.2B outstanding</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Loans</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? stats.totalLoans.toLocaleString() : "—"}</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Avg Interest Rate</p>
-            <p className="mt-1 text-2xl font-semibold text-primary">13.5%</p>
-            <p className="mt-1 text-xs text-muted-foreground">Weighted average</p>
+            <p className="mt-1 text-2xl font-semibold text-primary">
+              {stats && stats.averageInterestRate !== null ? formatPercent(stats.averageInterestRate) : "—"}
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">At-Risk Loans</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Positions At Risk</p>
             <div className="flex items-center gap-2">
-              <p className="mt-1 text-2xl font-semibold text-warning">23</p>
-              <AlertTriangle className="size-4 text-warning" />
+              <p className="mt-1 text-2xl font-semibold text-warning">{stats ? stats.positionsAtRisk.toLocaleString() : "—"}</p>
+              {stats && stats.positionsAtRisk > 0 && <AlertTriangle className="size-4 text-warning" />}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">LTV {'>'} 75%</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Defaults (MTD)</p>
-            <p className="mt-1 text-2xl font-semibold text-destructive">4</p>
-            <p className="mt-1 text-xs text-muted-foreground">\u20A618.5M total</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Defaulters</p>
+            <p className="mt-1 text-2xl font-semibold text-destructive">{stats ? stats.totalDefaulters.toLocaleString() : "—"}</p>
           </CardContent>
         </Card>
       </div>
@@ -108,15 +120,24 @@ export function LoansPage() {
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-sm font-medium text-foreground">All Loans</CardTitle>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search loans..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-8 w-[200px] bg-secondary border-border pl-8 text-sm"
-              />
-            </div>
+            <Select
+              value={status}
+              onValueChange={(v) => {
+                setStatus(v)
+                setOffset(0)
+              }}
+            >
+              <SelectTrigger className="h-8 w-[140px] bg-secondary border-border text-sm">
+                <Filter className="mr-1 size-3" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value={STATUS_ALL}>All Status</SelectItem>
+                {Object.values(LoanStatusSort).map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
@@ -125,57 +146,80 @@ export function LoansPage() {
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead className="text-xs text-muted-foreground">Loan ID</TableHead>
                 <TableHead className="text-xs text-muted-foreground">Borrower</TableHead>
-                <TableHead className="text-xs text-muted-foreground">Principal</TableHead>
                 <TableHead className="text-xs text-muted-foreground">Collateral</TableHead>
-                <TableHead className="text-xs text-muted-foreground">LTV</TableHead>
+                <TableHead className="text-xs text-muted-foreground">Loan Amount</TableHead>
                 <TableHead className="text-xs text-muted-foreground">Rate</TableHead>
                 <TableHead className="text-xs text-muted-foreground">Health</TableHead>
                 <TableHead className="text-xs text-muted-foreground">Status</TableHead>
-                <TableHead className="text-xs text-muted-foreground">Due Date</TableHead>
                 <TableHead className="text-xs text-muted-foreground text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((loan) => (
-                <TableRow key={loan.id} className="border-border">
-                  <TableCell className="text-sm font-mono text-primary">{loan.id}</TableCell>
-                  <TableCell className="text-sm text-foreground">{loan.user}</TableCell>
-                  <TableCell className="text-sm font-mono text-foreground">{loan.principal}</TableCell>
-                  <TableCell className="text-sm font-mono text-foreground">{loan.collateral}</TableCell>
-                  <TableCell className="text-sm text-foreground">{loan.ltv}%</TableCell>
-                  <TableCell className="text-sm text-foreground">{loan.rate}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress value={loan.health} className={`h-1.5 w-16 bg-secondary ${getHealthColor(loan.health)}`} />
-                      <span className="text-xs text-muted-foreground">{loan.health}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(loan.status)}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{loan.due}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="size-7 p-0 text-muted-foreground">
-                          <MoreHorizontal className="size-3.5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-popover border-border">
-                        <DropdownMenuItem className="text-foreground">
-                          <Eye className="mr-2 size-3.5" /> View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-foreground">
-                          Adjust Terms
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          Liquidate
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {isLoading ? (
+                <TableLoadingRows cols={colCount} />
+              ) : isError ? (
+                <TableErrorRow colSpan={colCount} onRetry={() => refetch()} message="Failed to load loans." />
+              ) : items.length === 0 ? (
+                <TableEmptyRow colSpan={colCount} message="No loans match your filters." />
+              ) : (
+                items.map((loan) => (
+                  <TableRow key={loan.loanId} className="border-border">
+                    <TableCell className="text-sm font-mono text-primary">{loan.loanId}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-foreground">{loan.user.name ?? "—"}</span>
+                        <span className="text-xs text-muted-foreground">{loan.user.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm font-mono text-foreground">{formatNaira(loan.collateralAmount)}</TableCell>
+                    <TableCell className="text-sm font-mono text-foreground">{formatNaira(loan.loanAmount)}</TableCell>
+                    <TableCell className="text-sm text-foreground">
+                      {loan.interestRate !== null ? formatPercent(loan.interestRate) : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {loan.healthFactor !== null ? (
+                        <div className="flex items-center gap-2">
+                          <Progress
+                            value={Math.max(0, Math.min(100, loan.healthFactor))}
+                            className={`h-1.5 w-16 bg-secondary ${getHealthColor(loan.healthFactor)}`}
+                          />
+                          <span className="text-xs text-muted-foreground">{loan.healthFactor}%</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(loan.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="size-7 p-0 text-muted-foreground">
+                            <MoreHorizontal className="size-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-popover border-border">
+                          <DropdownMenuItem className="text-foreground">
+                            <Eye className="mr-2 size-3.5" /> View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-foreground">Adjust Terms</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive">Liquidate</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
+          {!isLoading && !isError && total > 0 && (
+            <TablePagination
+              total={total}
+              limit={PAGE_SIZE}
+              offset={offset}
+              onPageChange={setOffset}
+              isFetching={isFetching}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,46 +20,99 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Download, ArrowDownLeft, ArrowUpRight, RefreshCw, Repeat } from "lucide-react"
+import {
+  Download,
+  ArrowDownLeft,
+  ArrowUpRight,
+  RefreshCw,
+  Repeat,
+  Send,
+  Flame,
+  type LucideIcon,
+} from "lucide-react"
+import { useTransactions } from "@/hooks/useTransactions"
+import { TransactionType, type AdminTransactionItem } from "@/types/admin"
+import { formatNaira, formatDateTime } from "@/lib/format"
+import {
+  TableLoadingRows,
+  TableEmptyRow,
+  TableErrorRow,
+  TablePagination,
+} from "@/components/dashboard/data-state"
 
-const allTransactions = [
-  { id: "TXN-20001", user: "Jasper Okwu", type: "Borrow", amount: "-\u20A6500,000.00", usd: "$333.33", status: "success", date: "Feb 23, 2026 14:32", fee: "$1.50", icon: ArrowDownLeft },
-  { id: "TXN-20002", user: "Amara Obi", type: "Repay", amount: "+\u20A6250,000.00", usd: "$166.67", status: "success", date: "Feb 23, 2026 14:28", fee: "$0.75", icon: ArrowUpRight },
-  { id: "TXN-20003", user: "Kola Adeyemi", type: "Swap", amount: "$1,200.00", usd: "0.024 BTC", status: "pending", date: "Feb 23, 2026 14:25", fee: "$3.60", icon: Repeat },
-  { id: "TXN-20004", user: "Fatima Bello", type: "Deposit", amount: "+$5,000.00", usd: "Vault", status: "success", date: "Feb 23, 2026 14:18", fee: "$0.00", icon: ArrowUpRight },
-  { id: "TXN-20005", user: "Chidi Eze", type: "Borrow", amount: "-\u20A61,000,000.00", usd: "$666.67", status: "failed", date: "Feb 23, 2026 14:12", fee: "$0.00", icon: ArrowDownLeft },
-  { id: "TXN-20006", user: "Ngozi Mba", type: "Earn", amount: "+$120.50", usd: "Interest", status: "success", date: "Feb 23, 2026 14:05", fee: "$0.00", icon: RefreshCw },
-  { id: "TXN-20007", user: "Aisha Suleiman", type: "Withdraw", amount: "-$2,500.00", usd: "Wallet", status: "success", date: "Feb 23, 2026 13:58", fee: "$2.50", icon: ArrowDownLeft },
-  { id: "TXN-20008", user: "Emeka Udo", type: "Swap", amount: "$800.00", usd: "4.2 ETH", status: "success", date: "Feb 23, 2026 13:45", fee: "$2.40", icon: Repeat },
-  { id: "TXN-20009", user: "Jasper Okwu", type: "Repay", amount: "+\u20A6100,000.00", usd: "$66.67", status: "success", date: "Feb 23, 2026 13:30", fee: "$0.50", icon: ArrowUpRight },
-  { id: "TXN-20010", user: "Fatima Bello", type: "Borrow", amount: "-\u20A6300,000.00", usd: "$200.00", status: "success", date: "Feb 23, 2026 13:22", fee: "$1.00", icon: ArrowDownLeft },
-]
+const PAGE_SIZE = 20
+const TYPE_ALL = "all"
+const STATUS_ALL = "all"
+
+const typeIcons: Record<string, LucideIcon> = {
+  BORROW: ArrowDownLeft,
+  REPAY: ArrowUpRight,
+  DEPOSIT: ArrowUpRight,
+  USD_DEPOSIT: ArrowUpRight,
+  WITHDRAW: ArrowDownLeft,
+  USD_WITHDRAWAL: ArrowDownLeft,
+  SWAP: Repeat,
+  CROSS_CHAIN_SWAP: Repeat,
+  SEND: Send,
+  LIQUIDATION: Flame,
+  INTEREST_ACCRUAL: RefreshCw,
+}
 
 function getStatusBadge(status: string) {
-  switch (status) {
-    case "success":
-      return <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px]">Success</Badge>
-    case "pending":
-      return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px]">Pending</Badge>
-    case "failed":
-      return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px]">Failed</Badge>
-    default:
-      return null
+  const s = status?.toUpperCase()
+  if (s === "SUCCESS" || s === "COMPLETED") {
+    return <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-[10px]">Success</Badge>
   }
+  if (s === "PENDING" || s === "PROCESSING") {
+    return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px]">Pending</Badge>
+  }
+  if (s === "FAILED" || s === "REJECTED") {
+    return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px]">Failed</Badge>
+  }
+  return <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[10px] capitalize">{status || "—"}</Badge>
+}
+
+function prettyType(type: string) {
+  return type.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function exportCsv(rows: AdminTransactionItem[]) {
+  const header = ["transactionType", "userName", "userEmail", "amount", "fee", "status", "createdAt"]
+  const body = rows.map((r) =>
+    [r.transactionType, r.user.name ?? "", r.user.email, r.amount, r.fee, r.status, r.createdAt]
+      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .join(",")
+  )
+  const csv = [header.join(","), ...body].join("\n")
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }))
+  const a = document.createElement("a")
+  a.href = url
+  a.download = "transactions.csv"
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 export function TransactionsPage() {
-  const [search, setSearch] = useState("")
-  const [typeFilter, setTypeFilter] = useState("all")
+  const [type, setType] = useState<string>(TYPE_ALL)
+  const [status, setStatus] = useState<string>(STATUS_ALL)
+  const [offset, setOffset] = useState(0)
 
-  const filtered = allTransactions.filter((tx) => {
-    const matchesSearch =
-      tx.user.toLowerCase().includes(search.toLowerCase()) ||
-      tx.id.toLowerCase().includes(search.toLowerCase())
-    const matchesType = typeFilter === "all" || tx.type.toLowerCase() === typeFilter
-    return matchesSearch && matchesType
-  })
+  const filters = useMemo(
+    () => ({
+      transactionType: type === TYPE_ALL ? undefined : (type as TransactionType),
+      status: status === STATUS_ALL ? undefined : status,
+      limit: PAGE_SIZE,
+      offset,
+    }),
+    [type, status, offset]
+  )
+
+  const { data, isLoading, isError, isFetching, refetch } = useTransactions(filters)
+
+  const stats = data?.stats
+  const items = data?.items ?? []
+  const total = data?.total ?? 0
+  const colCount = 6
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,134 +125,145 @@ export function TransactionsPage() {
         <Card className="border-border bg-card">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Today&apos;s Volume</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">$1.2M</p>
-            <p className="mt-1 text-xs text-success">+18% vs yesterday</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? formatNaira(stats.todayTransactionVolumeUsd) : "—"}</p>
+            {stats && (
+              <p className={`mt-1 text-xs ${stats.volumePercentChange.startsWith("-") ? "text-destructive" : "text-success"}`}>
+                {stats.volumePercentChange.startsWith("-") ? "" : "+"}{stats.volumePercentChange}% vs yesterday
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Transactions Today</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">3,241</p>
-            <p className="mt-1 text-xs text-muted-foreground">412 borrows, 298 repays</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? stats.totalTransactionsToday.toLocaleString() : "—"}</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Fees Collected</p>
-            <p className="mt-1 text-2xl font-semibold text-primary">$8,420</p>
-            <p className="mt-1 text-xs text-muted-foreground">Avg $2.60/tx</p>
+            <p className="mt-1 text-2xl font-semibold text-primary">{stats ? formatNaira(stats.feesCollectedTodayUsd) : "—"}</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Failed Rate</p>
-            <p className="mt-1 text-2xl font-semibold text-destructive">2.1%</p>
-            <p className="mt-1 text-xs text-muted-foreground">68 failed today</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Deposits Today</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? formatNaira(stats.breakdown.deposits) : "—"}</p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="bg-secondary border border-border">
-          <TabsTrigger value="all" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">All</TabsTrigger>
-          <TabsTrigger value="borrows" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Borrows</TabsTrigger>
-          <TabsTrigger value="repays" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Repays</TabsTrigger>
-          <TabsTrigger value="swaps" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Swaps</TabsTrigger>
-          <TabsTrigger value="deposits" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Deposits</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="mt-4">
-          <Card className="border-border bg-card">
-            <CardHeader className="pb-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <CardTitle className="text-sm font-medium text-foreground">All Transactions</CardTitle>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Search..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="h-8 w-[180px] bg-secondary border-border pl-8 text-sm"
-                    />
-                  </div>
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="h-8 w-[100px] bg-secondary border-border text-sm">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border-border">
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="borrow">Borrow</SelectItem>
-                      <SelectItem value="repay">Repay</SelectItem>
-                      <SelectItem value="swap">Swap</SelectItem>
-                      <SelectItem value="deposit">Deposit</SelectItem>
-                      <SelectItem value="earn">Earn</SelectItem>
-                      <SelectItem value="withdraw">Withdraw</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" size="sm" className="h-8 border-border bg-secondary text-foreground">
-                    <Download className="mr-1 size-3" />
-                    Export
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-border hover:bg-transparent">
-                    <TableHead className="text-xs text-muted-foreground">Transaction</TableHead>
-                    <TableHead className="text-xs text-muted-foreground">User</TableHead>
-                    <TableHead className="text-xs text-muted-foreground">Amount</TableHead>
-                    <TableHead className="text-xs text-muted-foreground">Fee</TableHead>
-                    <TableHead className="text-xs text-muted-foreground">Status</TableHead>
-                    <TableHead className="text-xs text-muted-foreground text-right">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((tx) => (
-                    <TableRow key={tx.id} className="border-border">
+      <Card className="border-border bg-card">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className="text-sm font-medium text-foreground">All Transactions</CardTitle>
+            <div className="flex items-center gap-2">
+              <Select
+                value={type}
+                onValueChange={(v) => {
+                  setType(v)
+                  setOffset(0)
+                }}
+              >
+                <SelectTrigger className="h-8 w-[150px] bg-secondary border-border text-sm">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value={TYPE_ALL}>All Types</SelectItem>
+                  {Object.values(TransactionType).map((t) => (
+                    <SelectItem key={t} value={t}>{prettyType(t)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={status}
+                onValueChange={(v) => {
+                  setStatus(v)
+                  setOffset(0)
+                }}
+              >
+                <SelectTrigger className="h-8 w-[120px] bg-secondary border-border text-sm">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value={STATUS_ALL}>All Status</SelectItem>
+                  <SelectItem value="SUCCESS">Success</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="FAILED">Failed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportCsv(items)}
+                disabled={items.length === 0}
+                className="h-8 border-border bg-secondary text-foreground"
+              >
+                <Download className="mr-1 size-3" />
+                Export
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border hover:bg-transparent">
+                <TableHead className="text-xs text-muted-foreground">Transaction</TableHead>
+                <TableHead className="text-xs text-muted-foreground">User</TableHead>
+                <TableHead className="text-xs text-muted-foreground">Amount</TableHead>
+                <TableHead className="text-xs text-muted-foreground">Fee</TableHead>
+                <TableHead className="text-xs text-muted-foreground">Status</TableHead>
+                <TableHead className="text-xs text-muted-foreground text-right">Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableLoadingRows cols={colCount} />
+              ) : isError ? (
+                <TableErrorRow colSpan={colCount} onRetry={() => refetch()} message="Failed to load transactions." />
+              ) : items.length === 0 ? (
+                <TableEmptyRow colSpan={colCount} message="No transactions match your filters." />
+              ) : (
+                items.map((tx, i) => {
+                  const Icon = typeIcons[tx.transactionType?.toUpperCase()] ?? RefreshCw
+                  return (
+                    <TableRow key={`${tx.createdAt}-${i}`} className="border-border">
                       <TableCell>
                         <div className="flex items-center gap-2.5">
                           <div className="flex size-7 items-center justify-center rounded-md bg-secondary text-primary">
-                            <tx.icon className="size-3.5" />
+                            <Icon className="size-3.5" />
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-foreground">{tx.type}</span>
-                            <span className="text-xs text-muted-foreground font-mono">{tx.id}</span>
-                          </div>
+                          <span className="text-sm font-medium text-foreground">{prettyType(tx.transactionType)}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{tx.user}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium font-mono text-foreground">{tx.amount}</span>
-                          <span className="text-xs text-muted-foreground">{tx.usd}</span>
+                          <span className="text-sm text-foreground">{tx.user.name ?? "—"}</span>
+                          <span className="text-xs text-muted-foreground">{tx.user.email}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm font-mono text-muted-foreground">{tx.fee}</TableCell>
+                      <TableCell className="text-sm font-mono font-medium text-foreground">{formatNaira(tx.amount)}</TableCell>
+                      <TableCell className="text-sm font-mono text-muted-foreground">{formatNaira(tx.fee)}</TableCell>
                       <TableCell>{getStatusBadge(tx.status)}</TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">{tx.date}</TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">{formatDateTime(tx.createdAt)}</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {["borrows", "repays", "swaps", "deposits"].map((tab) => (
-          <TabsContent key={tab} value={tab} className="mt-4">
-            <Card className="border-border bg-card">
-              <CardContent className="p-8">
-                <p className="text-center text-sm text-muted-foreground">
-                  Showing filtered view for {tab}. Same table structure with type-specific data.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+          {!isLoading && !isError && total > 0 && (
+            <TablePagination
+              total={total}
+              limit={PAGE_SIZE}
+              offset={offset}
+              onPageChange={setOffset}
+              isFetching={isFetching}
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

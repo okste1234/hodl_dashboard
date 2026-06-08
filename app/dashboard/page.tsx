@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { isAuthenticated } from "@/lib/auth"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/dashboard/app-sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
@@ -38,7 +40,22 @@ function DashboardContent({ activeTab }: { activeTab: string }) {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
+  const [authChecked, setAuthChecked] = useState(false)
+
+  // Client-side route guard: bounce unauthenticated visits to the login screen.
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.replace("/")
+      return
+    }
+    setAuthChecked(true)
+  }, [router])
+
+  if (!authChecked) {
+    return null
+  }
 
   return (
     <SidebarProvider>

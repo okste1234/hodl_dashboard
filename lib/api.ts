@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getToken, clearToken } from "@/lib/auth";
 
 if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
   throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
@@ -9,29 +10,23 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  // ❌ remove for now (only needed for cookies)
-  // withCredentials: true,
 });
 
-// ✅ Request interceptor
+// Request interceptor — attach the admin Bearer token (single source of truth).
 api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("accessToken");
-
-    // 🔒 prevent "null"/"undefined"
-    if (token && token !== "undefined" && token !== "null") {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-
   return config;
 });
 
-// ✅ Response interceptor
+// Response interceptor — on 401 to a protected route, clear the session and
+// bounce to login.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // 🔌 Network error
+    // Network error / server unreachable
     if (!error.response) {
       if (process.env.NODE_ENV === "development") {
         console.error("Network error or server unavailable");
@@ -42,16 +37,13 @@ api.interceptors.response.use(
     const status = error.response.status;
     const url = error.config?.url || "";
 
-    // 🔐 More flexible auth route detection
     const isAuthRoute =
       url.includes("/auth") || url.includes("/login") || url.includes("/verify");
 
     if (status === 401 && !isAuthRoute) {
       if (typeof window !== "undefined") {
-        // 🧹 Clear bad token
-        localStorage.removeItem("accessToken");
-
-        // 🚫 Prevent redirect loop
+        clearToken();
+        // Prevent redirect loop
         if (window.location.pathname !== "/") {
           window.location.href = "/";
         }
@@ -59,10 +51,7 @@ api.interceptors.response.use(
     }
 
     if (process.env.NODE_ENV === "development") {
-      console.error(
-        "API Error:",
-        error.response.data || error.message
-      );
+      console.error("API Error:", error.response.data || error.message);
     }
 
     return Promise.reject(error);

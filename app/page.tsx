@@ -8,6 +8,8 @@ import AuthTagCollage from "@/components/login/AuthTagCollage";
 import { useRequestOtp } from "@/hooks/useRequestOtp";
 import { useVerifyOtp } from "@/hooks/useVerifyOtp";
 import { useQueryClient } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
+import { setToken } from "@/lib/auth";
 
 export default function Root() {
   const router = useRouter();
@@ -48,9 +50,9 @@ export default function Root() {
       { email, otp },
       {
         onSuccess: (data) => {
-          // 🔐 Store token
+          // 🔐 Store token (single source of truth — read by the api interceptor)
           if (data.accessToken) {
-            localStorage.setItem("adm:accessToken", data.accessToken);
+            setToken(data.accessToken);
 
             // 👤 Optional: store admin
             queryClient.setQueryData(["admin"], data.admin);
@@ -73,7 +75,12 @@ export default function Root() {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const error = requestOtp.error || verifyOtp.error;
+  const rawError = requestOtp.error || verifyOtp.error;
+  const errorMessage = isAxiosError<{ message?: string }>(rawError)
+    ? rawError.response?.data?.message ?? "Something went wrong"
+    : rawError
+    ? "Something went wrong"
+    : null;
 
   return (
     <div className="min-h-screen bg-[#2200FF] flex items-center justify-center px-6">
@@ -104,10 +111,9 @@ export default function Root() {
             </h1>
 
             {/* Error */}
-            {error && (
+            {errorMessage && (
               <div className="mb-4 text-sm text-red-600 text-center">
-                {(error as any)?.response?.data?.message ||
-                  "Something went wrong"}
+                {errorMessage}
               </div>
             )}
 

@@ -1,13 +1,12 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Shield, AlertTriangle, Bell, Lock, Globe, Database } from "lucide-react"
+import { Shield, AlertTriangle, Bell, Info } from "lucide-react"
 
 export function SettingsPage() {
   return (
@@ -15,6 +14,15 @@ export function SettingsPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold text-foreground">Settings & Compliance</h1>
         <p className="text-sm text-muted-foreground">Platform configuration, compliance rules, and system settings.</p>
+      </div>
+
+      <div className="flex items-start gap-3 rounded-lg border border-warning/20 bg-warning/5 p-3">
+        <Info className="mt-0.5 size-4 shrink-0 text-warning" />
+        <p className="text-xs text-muted-foreground">
+          Settings persistence is not yet available — the backend does not expose
+          read/write endpoints for configuration. The controls below show defaults
+          and will be wired once <span className="font-mono">GET/PATCH /admin/settings</span> ships.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -108,7 +116,7 @@ export function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-0.5">
                 <Label className="text-sm text-foreground">High-Value Transactions</Label>
-                <span className="text-xs text-muted-foreground">Alert on transactions above $10,000</span>
+                <span className="text-xs text-muted-foreground">Alert on transactions above ₦10,000,000</span>
               </div>
               <Switch defaultChecked />
             </div>
@@ -142,51 +150,25 @@ export function SettingsPage() {
         <Card className="border-border bg-card">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Database className="size-4 text-primary" />
+              <Shield className="size-4 text-primary" />
               <CardTitle className="text-sm font-medium text-foreground">System Status</CardTitle>
             </div>
             <CardDescription className="text-xs text-muted-foreground">Platform infrastructure and service health.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {[
-              { service: "API Gateway", status: "operational", latency: "45ms" },
-              { service: "Database Cluster", status: "operational", latency: "12ms" },
-              { service: "Blockchain Node", status: "operational", latency: "180ms" },
-              { service: "KYC Provider", status: "degraded", latency: "850ms" },
-              { service: "Price Oracle", status: "operational", latency: "25ms" },
-              { service: "Email Service", status: "operational", latency: "200ms" },
-            ].map((item) => (
-              <div key={item.service} className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 p-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`size-2 rounded-full ${
-                      item.status === "operational" ? "bg-success" : "bg-warning"
-                    }`}
-                  />
-                  <span className="text-sm text-foreground">{item.service}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-muted-foreground">{item.latency}</span>
-                  <Badge
-                    variant="outline"
-                    className={`text-[10px] ${
-                      item.status === "operational"
-                        ? "bg-success/10 text-success border-success/20"
-                        : "bg-warning/10 text-warning border-warning/20"
-                    }`}
-                  >
-                    {item.status}
-                  </Badge>
-                </div>
-              </div>
-            ))}
+          <CardContent className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+            <Info className="size-6 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">System health metrics are not available.</p>
+            <p className="text-xs text-muted-foreground">
+              The backend does not expose a system-health endpoint yet.
+            </p>
           </CardContent>
         </Card>
       </div>
 
       <div className="flex items-center gap-3">
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Save Changes</Button>
-        <Button variant="outline" className="border-border bg-secondary text-foreground">Reset to Defaults</Button>
+        <Button disabled className="bg-primary text-primary-foreground hover:bg-primary/90">Save Changes</Button>
+        <Button variant="outline" disabled className="border-border bg-secondary text-foreground">Reset to Defaults</Button>
+        <span className="text-xs text-muted-foreground">Saving is disabled until settings endpoints are available.</span>
       </div>
     </div>
   )

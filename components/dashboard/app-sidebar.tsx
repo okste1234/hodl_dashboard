@@ -28,17 +28,18 @@ import {
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { logout } from "@/lib/auth"
 
 const mainNav = [
   { title: "Overview", icon: LayoutDashboard, id: "overview", badge: null },
-  { title: "Users", icon: Users, id: "users", badge: "2.4k" },
-  { title: "Loans", icon: CreditCard, id: "loans", badge: "156" },
-  { title: "Transactions", icon: ArrowLeftRight, id: "transactions", badge: "3.2k" },
+  { title: "Users", icon: Users, id: "users", badge: null },
+  { title: "Loans", icon: CreditCard, id: "loans", badge: null },
+  { title: "Transactions", icon: ArrowLeftRight, id: "transactions", badge: null },
   { title: "Vaults & Earnings", icon: Vault, id: "vaults", badge: null },
 ]
 
 const secondaryNav = [
-  { title: "Compliance", icon: Shield, id: "compliance", badge: "3" },
+  { title: "Compliance", icon: Shield, id: "compliance", badge: null },
   { title: "Analytics", icon: TrendingUp, id: "analytics", badge: null },
   { title: "Settings", icon: Settings, id: "settings", badge: null },
 ]
@@ -46,7 +47,7 @@ const secondaryNav = [
 type Admin = {
   id: string;
   email: string;
-  name: string;
+  name: string | null;
 };
 
 interface AppSidebarProps {
@@ -62,7 +63,16 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     initialData: () => queryClient.getQueryData(["admin"]), // optional
     enabled: false,
   });
-  console.log("Admin data in sidebar:", admin) // Debug log to check admin data
+
+  const handleLogout = () => {
+    queryClient.clear()
+    logout()
+  }
+
+  const initials = admin?.name
+    ? admin.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "AD"
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
@@ -138,7 +148,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" tooltip="Admin Account">
               <Avatar className="size-6">
-                <AvatarFallback className="bg-primary/20 text-primary text-xs">AD</AvatarFallback>
+                <AvatarFallback className="bg-primary/20 text-primary text-xs">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-foreground">{admin?.name || "Admin"}</span>
@@ -147,7 +157,11 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Logout" className="text-muted-foreground hover:text-destructive">
+            <SidebarMenuButton
+              tooltip="Logout"
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-destructive"
+            >
               <LogOut className="size-4" />
               <span>Log out</span>
             </SidebarMenuButton>
