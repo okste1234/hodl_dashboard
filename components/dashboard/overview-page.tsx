@@ -84,6 +84,7 @@ export function OverviewPage() {
         vaultPerformances={data.vaultPerformances}
         riskOverview={data.riskOverview}
       />
+      
 
       {/* Recent Transactions */}
       <RecentTransactions transactions={data.recentTransactions} />
