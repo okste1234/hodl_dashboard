@@ -22,18 +22,16 @@ import {
 import { Shield, AlertTriangle, CheckCircle, Clock, Eye, Filter, Inbox } from "lucide-react"
 import { useCompliance } from "@/hooks/useCompliance"
 import { ComplianceKycStatus, type AdminKycItem } from "@/types/admin"
-import { formatDate } from "@/lib/format"
+import { formatDate, userDisplayName } from "@/lib/format"
 import {
   TableLoadingRows,
   TableEmptyRow,
   TableErrorRow,
+  TablePagination,
 } from "@/components/dashboard/data-state"
 import { KycReviewSheet } from "@/components/dashboard/kyc-review-sheet"
 
-// NOTE: /admin/compliance 400s when limit/offset are supplied — KycRequestsFilterDto
-// (kyc-filter.dto.ts) is missing @Type(() => Number) on its @IsInt limit/offset
-// (same class of bug as UserFilterDto; see Technical Findings F2). Until the
-// backend fix lands we omit pagination params and render the server default page.
+const PAGE_SIZE = 20
 const STATUS_ALL = "all"
 
 function getKycStatusBadge(status: string) {
@@ -50,16 +48,19 @@ function getKycStatusBadge(status: string) {
 
 export function CompliancePage() {
   const [status, setStatus] = useState<string>(STATUS_ALL)
+  const [offset, setOffset] = useState(0)
   const [selectedKyc, setSelectedKyc] = useState<AdminKycItem | null>(null)
 
   const filters = useMemo(
     () => ({
       status: status === STATUS_ALL ? undefined : (status as ComplianceKycStatus),
+      limit: PAGE_SIZE,
+      offset,
     }),
-    [status]
+    [status, offset]
   )
 
-  const { data, isLoading, isError, refetch } = useCompliance(filters)
+  const { data, isLoading, isError, isFetching, refetch } = useCompliance(filters)
 
   const stats = data?.stats
   const items = data?.items ?? []
@@ -118,7 +119,10 @@ export function CompliancePage() {
             <CardTitle className="text-sm font-medium text-foreground">KYC Verification Queue</CardTitle>
             <Select
               value={status}
-              onValueChange={(v) => setStatus(v)}
+              onValueChange={(v) => {
+                setStatus(v)
+                setOffset(0)
+              }}
             >
               <SelectTrigger className="h-8 w-[140px] bg-secondary border-border text-sm">
                 <Filter className="mr-1 size-3" />
@@ -156,7 +160,7 @@ export function CompliancePage() {
                   <TableRow key={`${req.user.email}-${i}`} className="border-border">
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-sm text-foreground">{req.user.name ?? "—"}</span>
+                        <span className="text-sm text-foreground">{userDisplayName(req.user.name, req.user.email)}</span>
                         <span className="text-xs text-muted-foreground">{req.user.email}</span>
                       </div>
                     </TableCell>
@@ -183,16 +187,13 @@ export function CompliancePage() {
             </TableBody>
           </Table>
           {!isLoading && !isError && total > 0 && (
-            <div className="flex items-center justify-between gap-3 border-t border-border px-1 pt-3">
-              <p className="text-xs text-muted-foreground">
-                Showing {items.length} of {total.toLocaleString()}
-              </p>
-              {total > items.length && (
-                <p className="text-xs text-muted-foreground">
-                  Pagination pending a backend fix to <span className="font-mono">KycRequestsFilterDto</span>.
-                </p>
-              )}
-            </div>
+            <TablePagination
+              total={total}
+              limit={PAGE_SIZE}
+              offset={offset}
+              onPageChange={setOffset}
+              isFetching={isFetching}
+            />
           )}
         </CardContent>
       </Card>

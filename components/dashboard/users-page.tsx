@@ -30,17 +30,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useUsers } from "@/hooks/useUsers"
 import { UserKycStatus, type AdminUserItem } from "@/types/admin"
-import { formatNaira, formatDate, initialsFrom } from "@/lib/format"
+import { formatUsd, formatDate, initialsFrom, userDisplayName } from "@/lib/format"
 import {
   TableLoadingRows,
   TableEmptyRow,
   TableErrorRow,
+  TablePagination,
 } from "@/components/dashboard/data-state"
 import { UserDetailSheet } from "@/components/dashboard/user-detail-sheet"
 
-// NOTE: /admin/users 400s when limit/offset are supplied (UserFilterDto is
-// missing @Type(() => Number) — see Technical Findings). Until that backend fix
-// lands we omit pagination params and render the server's default first page.
+const PAGE_SIZE = 20
 const KYC_ALL = "all"
 
 function getKycBadge(kyc: string) {
@@ -85,11 +84,13 @@ export function UsersPage() {
   const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
   const [kycStatus, setKycStatus] = useState<string>(KYC_ALL)
+  const [offset, setOffset] = useState(0)
 
-  // Debounce search input → server query.
+  // Debounce search input → server query, resetting to the first page on change.
   useEffect(() => {
     const t = setTimeout(() => {
       setSearch(searchInput.trim())
+      setOffset(0)
     }, 400)
     return () => clearTimeout(t)
   }, [searchInput])
@@ -98,11 +99,13 @@ export function UsersPage() {
     () => ({
       search: search || undefined,
       kycStatus: kycStatus === KYC_ALL ? undefined : (kycStatus as UserKycStatus),
+      limit: PAGE_SIZE,
+      offset,
     }),
-    [search, kycStatus]
+    [search, kycStatus, offset]
   )
 
-  const { data, isLoading, isError, refetch } = useUsers(filters)
+  const { data, isLoading, isError, isFetching, refetch } = useUsers(filters)
   const [selectedUser, setSelectedUser] = useState<AdminUserItem | null>(null)
 
   const stats = data?.stats
@@ -160,7 +163,10 @@ export function UsersPage() {
               </div>
               <Select
                 value={kycStatus}
-                onValueChange={(v) => setKycStatus(v)}
+                onValueChange={(v) => {
+                  setKycStatus(v)
+                  setOffset(0)
+                }}
               >
                 <SelectTrigger className="h-8 w-[140px] bg-secondary border-border text-sm">
                   <Filter className="mr-1 size-3" />
@@ -218,13 +224,13 @@ export function UsersPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground">{user.name ?? user.username ?? "—"}</span>
+                          <span className="text-sm font-medium text-foreground">{userDisplayName(user.name ?? user.username, user.email)}</span>
                           <span className="text-xs text-muted-foreground">{user.email}</span>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm font-mono text-foreground">{formatNaira(user.walletUsd)}</TableCell>
-                    <TableCell className="text-sm font-mono text-foreground">{formatNaira(user.vaultUsd)}</TableCell>
+                    <TableCell className="text-sm font-mono text-foreground">{formatUsd(user.walletUsd)}</TableCell>
+                    <TableCell className="text-sm font-mono text-foreground">{formatUsd(user.vaultUsd)}</TableCell>
                     <TableCell className="text-sm text-foreground">{user.loansCount}</TableCell>
                     <TableCell>{getKycBadge(user.kycStatus)}</TableCell>
                     <TableCell>{getStatusBadge(user.status)}</TableCell>
@@ -255,16 +261,13 @@ export function UsersPage() {
             </TableBody>
           </Table>
           {!isLoading && !isError && total > 0 && (
-            <div className="flex items-center justify-between gap-3 border-t border-border px-1 pt-3">
-              <p className="text-xs text-muted-foreground">
-                Showing {items.length} of {total.toLocaleString()}
-              </p>
-              {total > items.length && (
-                <p className="text-xs text-muted-foreground">
-                  Pagination pending a backend fix to <span className="font-mono">UserFilterDto</span>.
-                </p>
-              )}
-            </div>
+            <TablePagination
+              total={total}
+              limit={PAGE_SIZE}
+              offset={offset}
+              onPageChange={setOffset}
+              isFetching={isFetching}
+            />
           )}
         </CardContent>
       </Card>

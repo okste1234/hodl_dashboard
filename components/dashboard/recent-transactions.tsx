@@ -20,7 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import type { AdminTransactionItem } from "@/types/admin"
-import { formatNaira, formatDateTime } from "@/lib/format"
+import { formatDateTime, formatTokenAmount, txTokenSymbol, userDisplayName } from "@/lib/format"
 
 const typeIcons: Record<string, LucideIcon> = {
   BORROW: ArrowDownLeft,
@@ -91,8 +91,13 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                         <span className="text-sm font-medium text-foreground">{prettyType(tx.transactionType)}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-foreground">{tx.user.name ?? tx.user.email}</TableCell>
-                    <TableCell className="text-sm font-medium font-mono text-foreground">{formatNaira(tx.amount)}</TableCell>
+                    <TableCell className="text-sm text-foreground">{userDisplayName(tx.user.name, tx.user.email)}</TableCell>
+                    <TableCell className="text-sm font-medium font-mono text-foreground">
+                      {formatTokenAmount(tx.amount, txTokenSymbol(tx))}
+                      {tx.toTokenSymbol && (
+                        <span className="text-muted-foreground"> → {tx.toTokenSymbol}</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`text-[10px] capitalize ${getStatusColor(tx.status)}`}>
                         {tx.status?.toLowerCase()}

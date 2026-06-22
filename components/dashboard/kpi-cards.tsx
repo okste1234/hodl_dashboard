@@ -9,7 +9,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react"
-import { formatNaira } from "@/lib/format"
+import { formatUsd } from "@/lib/format"
 
 type OverviewStats = {
   users: {
@@ -47,7 +47,7 @@ export function KPICards({ stats }: KPICardsProps) {
     },
     {
       title: "Total Value Locked",
-      value: formatNaira(stats.tvl.total),
+      value: formatUsd(stats.tvl.total),
       change: stats.tvl.growthPercentThisWeek,
       trend: stats.tvl.growthPercentThisWeek.startsWith("+") ? "up" : "down" as const,
       icon: Wallet,
@@ -59,11 +59,11 @@ export function KPICards({ stats }: KPICardsProps) {
       change: stats.activeLoans.growthPercentThisWeek,
       trend: stats.activeLoans.growthPercentThisWeek.startsWith("+") ? "up" : "down" as const,
       icon: CreditCard,
-      subtitle: `${formatNaira(stats.activeLoans.amountBorrowed)} outstanding`,
+      subtitle: `${formatUsd(stats.activeLoans.amountBorrowed)} outstanding`,
     },
     {
       title: "Platform Revenue",
-      value: formatNaira(stats.platformRevenue.total),
+      value: formatUsd(stats.platformRevenue.total),
       change: stats.platformRevenue.growthPercentThisMonth,
       trend: stats.platformRevenue.growthPercentThisMonth.startsWith("+") ? "up" : "down" as const,
       icon: TrendingUp,

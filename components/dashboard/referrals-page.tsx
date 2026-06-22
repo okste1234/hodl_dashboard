@@ -17,7 +17,7 @@ import { StatCard } from "@/components/dashboard/stat-card"
 import { TableLoadingRows, TableEmptyRow } from "@/components/dashboard/data-state"
 import { useMockData } from "@/hooks/useMockData"
 import { userById } from "@/mocks/shared"
-import { formatNaira } from "@/lib/format"
+import { formatUsd } from "@/lib/format"
 import {
   REFERRAL_STATS,
   REFERRERS,
@@ -79,7 +79,7 @@ export function ReferralsPage() {
         <StatCard label="Referrers" value={s ? s.totalReferrers.toLocaleString() : "—"} icon={Users} isLoading={stats.isLoading} />
         <StatCard label="Invited" value={s ? s.totalInvited.toLocaleString() : "—"} icon={UserPlus} tone="primary" isLoading={stats.isLoading} />
         <StatCard label="Signups" value={s ? s.totalSignups.toLocaleString() : "—"} icon={TrendingUp} tone="success" isLoading={stats.isLoading} />
-        <StatCard label="Rewards Paid" value={s ? formatNaira(s.rewardsPaidUsd) : "—"} icon={Gift} isLoading={stats.isLoading} />
+        <StatCard label="Rewards Paid" value={s ? formatUsd(s.rewardsPaidUsd) : "—"} icon={Gift} isLoading={stats.isLoading} />
       </div>
 
       <Card className="border-border bg-card">
@@ -144,7 +144,7 @@ export function ReferralsPage() {
                           <TableCell className="text-sm font-mono text-primary">{r.code}</TableCell>
                           <TableCell className="text-sm text-foreground">{r.invited}</TableCell>
                           <TableCell className="text-sm text-foreground">{r.funded}</TableCell>
-                          <TableCell className="text-sm font-mono text-success">{formatNaira(r.rewardEarnedUsd)}</TableCell>
+                          <TableCell className="text-sm font-mono text-success">{formatUsd(r.rewardEarnedUsd)}</TableCell>
                           <TableCell className="text-right">{tierBadge(r.tier)}</TableCell>
                         </TableRow>
                       )
@@ -178,7 +178,7 @@ export function ReferralsPage() {
                       <TableRow key={rw.id} className="border-border">
                         <TableCell className="text-sm text-foreground">{rw.referredUserLabel}</TableCell>
                         <TableCell className="text-sm text-muted-foreground capitalize">{rw.milestone.replace(/_/g, " ")}</TableCell>
-                        <TableCell className="text-sm font-mono text-foreground">{formatNaira(rw.amountUsd)}</TableCell>
+                        <TableCell className="text-sm font-mono text-foreground">{formatUsd(rw.amountUsd)}</TableCell>
                         <TableCell className="text-right">{rewardStatusBadge(rw.status)}</TableCell>
                       </TableRow>
                     ))

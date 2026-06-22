@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { StatsOverview } from "@/hooks/useStatsOverview"
-import { formatNaira, formatPercent } from "@/lib/format"
+import { formatUsd, formatPercent } from "@/lib/format"
 
 type PlatformStatsProps = {
   vaultPerformances: StatsOverview["vaultPerformances"]
@@ -32,7 +32,7 @@ export function PlatformStats({ vaultPerformances, riskOverview }: PlatformStats
               <div key={vault.name} className="flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-foreground">{vault.name}</span>
-                  <span className="text-xs text-muted-foreground">TVL: {formatNaira(vault.tvl)}</span>
+                  <span className="text-xs text-muted-foreground">TVL: {formatUsd(vault.tvl)}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-primary">{formatPercent(vault.apy)} APY</span>

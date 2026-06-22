@@ -79,7 +79,7 @@ export const CAMPAIGNS: Campaign[] = [
   },
   {
     id: "cmp_04",
-    title: "We miss you — here's ₦2,000 to come back",
+    title: "We miss you — here's $20 to come back",
     body: "Reactivate your account and get a bonus on your next deposit.",
     channel: "email",
     segment: "dormant_30d",

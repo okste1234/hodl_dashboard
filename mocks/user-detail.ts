@@ -57,7 +57,7 @@ export function buildUserDetail(seed: { email: string }): UserDetail {
     ],
     activity: [
       { label: "Signed in", at: "2026-02-23T14:32:00Z" },
-      { label: "Borrowed ₦500,000 against ETH", at: "2026-02-22T09:11:00Z" },
+      { label: "Borrowed $320 against ETH", at: "2026-02-22T09:11:00Z" },
       { label: "Completed KYC Tier 1", at: "2026-02-10T16:05:00Z" },
       { label: "Linked GTBank account", at: "2026-02-09T12:20:00Z" },
     ],

@@ -116,7 +116,7 @@ export function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-0.5">
                 <Label className="text-sm text-foreground">High-Value Transactions</Label>
-                <span className="text-xs text-muted-foreground">Alert on transactions above ₦10,000,000</span>
+                <span className="text-xs text-muted-foreground">Alert on transactions above $10,000</span>
               </div>
               <Switch defaultChecked />
             </div>

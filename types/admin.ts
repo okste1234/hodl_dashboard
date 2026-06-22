@@ -127,6 +127,12 @@ export interface AdminTransactionItem {
   fee: string
   status: string
   createdAt: string
+  // Token symbols as returned by the backend receipt parser. Most rails carry
+  // `tokenSymbol`; swaps / cross-chain / USD→fiat carry `fromTokenSymbol` +
+  // `toTokenSymbol`. Optional because older receipts (no remark) omit them.
+  tokenSymbol?: string
+  fromTokenSymbol?: string
+  toTokenSymbol?: string
 }
 
 export type TransactionsResponse = { stats: TransactionStats } & Paginated<AdminTransactionItem>
@@ -251,4 +257,30 @@ export interface AnalyticsResponse {
   loanVolume: AnalyticsPoint[]
   conversionActivity: AnalyticsPoint[]
   feeRevenue: AnalyticsPoint[]
+}
+
+// ---------------------------------------------------------------------------
+// POST /admin/reconcile/paycrest
+// Reconciles on/off-ramp transactions stuck on INITIATED/PENDING by polling
+// Paycrest for their authoritative status. No request body.
+// ---------------------------------------------------------------------------
+
+export type ReconcileOutcome = "updated" | "unchanged" | "failed"
+
+export interface ReconcileDetail {
+  transactionId: string
+  transactionNo: string
+  from: string
+  to?: string
+  paycrestStatus?: string
+  outcome: ReconcileOutcome
+  error?: string
+}
+
+export interface ReconciliationResult {
+  checked: number
+  updated: number
+  unchanged: number
+  failed: number
+  details: ReconcileDetail[]
 }

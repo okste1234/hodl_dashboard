@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table"
 import { Lock, TrendingUp, Coins, Users } from "lucide-react"
 import { useVaults } from "@/hooks/useVaults"
-import { formatNaira, formatPercent } from "@/lib/format"
+import { formatUsd, formatPercent, userDisplayName } from "@/lib/format"
 import {
   TableLoadingRows,
   TableEmptyRow,
@@ -49,7 +49,7 @@ export function VaultsPage() {
               <Lock className="size-4 text-primary" />
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Total TVL</p>
             </div>
-            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? formatNaira(stats.totalTVL) : "—"}</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? formatUsd(stats.totalTVL) : "—"}</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
@@ -67,7 +67,7 @@ export function VaultsPage() {
               <Coins className="size-4 text-primary" />
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Earnings Paid</p>
             </div>
-            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? formatNaira(stats.totalEarnings) : "—"}</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? formatUsd(stats.totalEarnings) : "—"}</p>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
@@ -95,11 +95,11 @@ export function VaultsPage() {
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Total Vault Value</span>
-                  <span className="text-sm font-mono font-medium text-foreground">{formatNaira(details.totalVaultValue)}</span>
+                  <span className="text-sm font-mono font-medium text-foreground">{formatUsd(details.totalVaultValue)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Total Earnings</span>
-                  <span className="text-sm font-mono font-medium text-success">{formatNaira(details.totalEarnings)}</span>
+                  <span className="text-sm font-mono font-medium text-success">{formatUsd(details.totalEarnings)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">APY</span>
@@ -152,13 +152,13 @@ export function VaultsPage() {
                   <TableRow key={`${entry.user.email}-${i}`} className="border-border">
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium text-foreground">{entry.user.name ?? "—"}</span>
+                        <span className="text-sm font-medium text-foreground">{userDisplayName(entry.user.name, entry.user.email)}</span>
                         <span className="text-xs text-muted-foreground">{entry.user.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm font-mono text-foreground">{formatNaira(entry.vaultBalance)}</TableCell>
-                    <TableCell className="text-sm font-mono text-foreground">{formatNaira(entry.amountLocked)}</TableCell>
-                    <TableCell className="text-sm font-mono font-medium text-success">{formatNaira(entry.earnings)}</TableCell>
+                    <TableCell className="text-sm font-mono text-foreground">{formatUsd(entry.vaultBalance)}</TableCell>
+                    <TableCell className="text-sm font-mono text-foreground">{formatUsd(entry.amountLocked)}</TableCell>
+                    <TableCell className="text-sm font-mono font-medium text-success">{formatUsd(entry.earnings)}</TableCell>
                     <TableCell className="text-right text-xs text-muted-foreground">{entry.period}</TableCell>
                   </TableRow>
                 ))

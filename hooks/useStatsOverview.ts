@@ -46,6 +46,9 @@ export type StatsOverview = {
     fee: string
     status: string
     createdAt: string
+    tokenSymbol?: string
+    fromTokenSymbol?: string
+    toTokenSymbol?: string
   }[]
   vaultPerformances: {
     name: string

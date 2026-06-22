@@ -32,7 +32,7 @@ import { useMockData } from "@/hooks/useMockData"
 import { WALLET_HOLDINGS, WALLET_STATS } from "@/mocks/wallets"
 import { CHAINS } from "@/mocks/shared"
 import { userById } from "@/mocks/shared"
-import { formatNaira, formatToken, formatDelta, initialsFrom } from "@/lib/format"
+import { formatUsd, formatToken, formatDelta, initialsFrom } from "@/lib/format"
 
 const PAGE_SIZE = 8
 const CHAIN_ALL = "all"
@@ -74,7 +74,7 @@ export function WalletsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <StatCard label="Total Wallet Value" value={s ? formatNaira(s.totalWalletValueUsd) : "—"} icon={Wallet} isLoading={stats.isLoading} />
+        <StatCard label="Total Wallet Value" value={s ? formatUsd(s.totalWalletValueUsd) : "—"} icon={Wallet} isLoading={stats.isLoading} />
         <StatCard label="Tracked Wallets" value={s ? s.trackedWallets.toLocaleString() : "—"} icon={Layers} tone="primary" isLoading={stats.isLoading} />
         <StatCard label="Distinct Tokens" value={s ? s.distinctTokens.toLocaleString() : "—"} icon={Coins} isLoading={stats.isLoading} />
         <StatCard label="Active Chains" value={s ? s.activeChains.toLocaleString() : "—"} icon={Network} isLoading={stats.isLoading} />
@@ -163,7 +163,7 @@ export function WalletsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-sm font-mono text-foreground">{formatToken(h.balance, h.symbol)}</TableCell>
-                      <TableCell className="text-sm font-mono text-foreground">{formatNaira(h.valueUsd)}</TableCell>
+                      <TableCell className="text-sm font-mono text-foreground">{formatUsd(h.valueUsd)}</TableCell>
                       <TableCell className={`text-right text-xs font-medium ${h.variation24h >= 0 ? "text-success" : "text-destructive"}`}>
                         {formatDelta(h.variation24h)}
                       </TableCell>

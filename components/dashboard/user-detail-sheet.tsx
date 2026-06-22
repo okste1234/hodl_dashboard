@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ChainBadge } from "@/components/dashboard/chain-badge"
 import type { AdminUserItem } from "@/types/admin"
 import { buildUserDetail } from "@/mocks/user-detail"
-import { formatNaira, formatDate, formatDateTime, initialsFrom } from "@/lib/format"
+import { formatUsd, formatDate, formatDateTime, initialsFrom, userDisplayName } from "@/lib/format"
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -49,7 +49,7 @@ export function UserDetailSheet({
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <SheetTitle className="text-foreground">{user.name ?? user.username ?? "—"}</SheetTitle>
+                  <SheetTitle className="text-foreground">{userDisplayName(user.name ?? user.username, user.email)}</SheetTitle>
                   <SheetDescription>{user.email}</SheetDescription>
                 </div>
               </div>
@@ -60,11 +60,11 @@ export function UserDetailSheet({
               <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-secondary/40 p-3 text-sm">
                 <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground">Wallet</span>
-                  <span className="font-mono text-foreground">{formatNaira(user.walletUsd)}</span>
+                  <span className="font-mono text-foreground">{formatUsd(user.walletUsd)}</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground">Vault</span>
-                  <span className="font-mono text-foreground">{formatNaira(user.vaultUsd)}</span>
+                  <span className="font-mono text-foreground">{formatUsd(user.vaultUsd)}</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground">KYC</span>
@@ -110,7 +110,7 @@ export function UserDetailSheet({
                         <span className="text-sm text-foreground">{w.symbol}</span>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-sm font-mono text-foreground">{formatNaira(w.valueUsd)}</span>
+                        <span className="text-sm font-mono text-foreground">{formatUsd(w.valueUsd)}</span>
                         <span className="text-[10px] text-muted-foreground">{w.balance} {w.symbol}</span>
                       </div>
                     </div>
@@ -127,7 +127,7 @@ export function UserDetailSheet({
                         <span className="text-[10px] text-muted-foreground">Collateral: {l.collateral}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-mono text-foreground">{formatNaira(l.borrowedUsd)}</span>
+                        <span className="text-sm font-mono text-foreground">{formatUsd(l.borrowedUsd)}</span>
                         <Badge variant="outline" className={`text-[10px] ${l.status === "ACTIVE" ? "bg-success/10 text-success border-success/20" : "bg-chart-2/10 text-chart-2 border-chart-2/20"}`}>
                           {l.status}
                         </Badge>

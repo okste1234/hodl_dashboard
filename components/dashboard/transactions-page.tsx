@@ -32,7 +32,8 @@ import {
 } from "lucide-react"
 import { useTransactions } from "@/hooks/useTransactions"
 import { TransactionType, type AdminTransactionItem } from "@/types/admin"
-import { formatNaira, formatDateTime } from "@/lib/format"
+import { formatUsd, formatDateTime, formatTokenAmount, txTokenSymbol, userDisplayName } from "@/lib/format"
+import { TransactionBreakdownCard } from "@/components/dashboard/transaction-breakdown"
 import {
   TableLoadingRows,
   TableEmptyRow,
@@ -77,9 +78,20 @@ function prettyType(type: string) {
 }
 
 function exportCsv(rows: AdminTransactionItem[]) {
-  const header = ["transactionType", "userName", "userEmail", "amount", "fee", "status", "createdAt"]
+  const header = ["transactionType", "userName", "userEmail", "amount", "tokenSymbol", "fromTokenSymbol", "toTokenSymbol", "fee", "status", "createdAt"]
   const body = rows.map((r) =>
-    [r.transactionType, r.user.name ?? "", r.user.email, r.amount, r.fee, r.status, r.createdAt]
+    [
+      r.transactionType,
+      r.user.name ?? "",
+      r.user.email,
+      r.amount,
+      r.tokenSymbol ?? "",
+      r.fromTokenSymbol ?? "",
+      r.toTokenSymbol ?? "",
+      r.fee,
+      r.status,
+      r.createdAt,
+    ]
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
       .join(",")
   )
@@ -121,11 +133,11 @@ export function TransactionsPage() {
         <p className="text-sm text-muted-foreground">Real-time view of all platform transactions across borrowing, lending, and conversions.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="border-border bg-card">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Today&apos;s Volume</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? formatNaira(stats.todayTransactionVolumeUsd) : "—"}</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? formatUsd(stats.todayTransactionVolumeUsd) : "—"}</p>
             {stats && (
               <p className={`mt-1 text-xs ${stats.volumePercentChange.startsWith("-") ? "text-destructive" : "text-success"}`}>
                 {stats.volumePercentChange.startsWith("-") ? "" : "+"}{stats.volumePercentChange}% vs yesterday
@@ -142,16 +154,12 @@ export function TransactionsPage() {
         <Card className="border-border bg-card">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Fees Collected</p>
-            <p className="mt-1 text-2xl font-semibold text-primary">{stats ? formatNaira(stats.feesCollectedTodayUsd) : "—"}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Deposits Today</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">{stats ? formatNaira(stats.breakdown.deposits) : "—"}</p>
+            <p className="mt-1 text-2xl font-semibold text-primary">{stats ? formatUsd(stats.feesCollectedTodayUsd) : "—"}</p>
           </CardContent>
         </Card>
       </div>
+
+      <TransactionBreakdownCard breakdown={stats?.breakdown} isLoading={isLoading} />
 
       <Card className="border-border bg-card">
         <CardHeader className="pb-3">
@@ -239,12 +247,17 @@ export function TransactionsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="text-sm text-foreground">{tx.user.name ?? "—"}</span>
+                          <span className="text-sm text-foreground">{userDisplayName(tx.user.name, tx.user.email)}</span>
                           <span className="text-xs text-muted-foreground">{tx.user.email}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm font-mono font-medium text-foreground">{formatNaira(tx.amount)}</TableCell>
-                      <TableCell className="text-sm font-mono text-muted-foreground">{formatNaira(tx.fee)}</TableCell>
+                      <TableCell className="text-sm font-mono font-medium text-foreground">
+                        {formatTokenAmount(tx.amount, txTokenSymbol(tx))}
+                        {tx.toTokenSymbol && (
+                          <span className="text-muted-foreground"> → {tx.toTokenSymbol}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm font-mono text-muted-foreground">{tx.fee ?? "—"}</TableCell>
                       <TableCell>{getStatusBadge(tx.status)}</TableCell>
                       <TableCell className="text-right text-xs text-muted-foreground">{formatDateTime(tx.createdAt)}</TableCell>
                     </TableRow>

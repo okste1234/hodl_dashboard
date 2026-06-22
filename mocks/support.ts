@@ -50,7 +50,7 @@ export const SUPPORT_TICKETS: SupportTicket[] = [
     updatedAt: "2026-02-23T13:10:00Z",
     slaBreached: true,
     thread: [
-      { id: "m1", author: "user", body: "I sent ₦800,000 two hours ago and my cNGN hasn't arrived. Reference ONR-90023.", at: "2026-02-23T13:10:00Z" },
+      { id: "m1", author: "user", body: "I sent $500 two hours ago and my cNGN hasn't arrived. Reference ONR-90023.", at: "2026-02-23T13:10:00Z" },
     ],
   },
   {

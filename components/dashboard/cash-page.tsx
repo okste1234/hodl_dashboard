@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Table,
@@ -11,12 +12,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Banknote, Wallet, Clock, ArrowLeftRight, ArrowDownLeft, ArrowUpRight } from "lucide-react"
+import { Banknote, Wallet, Clock, ArrowLeftRight, ArrowDownLeft, ArrowUpRight, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { TableLoadingRows, TableEmptyRow } from "@/components/dashboard/data-state"
 import { useMockData } from "@/hooks/useMockData"
+import { useReconcilePaycrest } from "@/hooks/useReconcilePaycrest"
 import { userById } from "@/mocks/shared"
-import { formatNaira, formatDate, formatToken } from "@/lib/format"
+import { formatUsd, formatDate, formatToken } from "@/lib/format"
 import {
   CASH_STATS,
   VIRTUAL_ACCOUNTS,
@@ -65,6 +67,9 @@ export function CashPage() {
   const banks = useMockData(LINKED_BANKS)
   const s = stats.data
 
+  // Real admin route: POST /admin/reconcile/paycrest (the rest of this page is mock).
+  const reconcile = useReconcilePaycrest()
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
@@ -73,10 +78,10 @@ export function CashPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <StatCard label="USD Held" value={s ? formatNaira(s.totalUsdHeld) : "—"} icon={Wallet} isLoading={stats.isLoading} />
+        <StatCard label="USD Held" value={s ? formatUsd(s.totalUsdHeld) : "—"} icon={Wallet} isLoading={stats.isLoading} />
         <StatCard label="Active Accounts" value={s ? s.activeAccounts.toLocaleString() : "—"} icon={Banknote} tone="primary" isLoading={stats.isLoading} />
         <StatCard label="Pending Ramps" value={s ? s.pendingRamps.toLocaleString() : "—"} icon={Clock} tone="warning" isLoading={stats.isLoading} />
-        <StatCard label="Ramp Volume (24h)" value={s ? formatNaira(s.rampVolume24hUsd) : "—"} icon={ArrowLeftRight} isLoading={stats.isLoading} />
+        <StatCard label="Ramp Volume (24h)" value={s ? formatUsd(s.rampVolume24hUsd) : "—"} icon={ArrowLeftRight} isLoading={stats.isLoading} />
       </div>
 
       <Tabs defaultValue="accounts" className="w-full">
@@ -122,7 +127,7 @@ export function CashPage() {
                           </TableCell>
                           <TableCell className="text-sm font-mono text-foreground">{a.accountNumber}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{a.bankName}</TableCell>
-                          <TableCell className="text-sm font-mono text-foreground">{formatNaira(a.availableBalanceUsd)}</TableCell>
+                          <TableCell className="text-sm font-mono text-foreground">{formatUsd(a.availableBalanceUsd)}</TableCell>
                           <TableCell>{vaStatusBadge(a.status)}</TableCell>
                           <TableCell className="text-right text-xs text-muted-foreground">{formatDate(a.createdAt)}</TableCell>
                         </TableRow>
@@ -139,7 +144,38 @@ export function CashPage() {
         <TabsContent value="ramps" className="mt-4">
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-foreground">Ramp Orders</CardTitle>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <CardTitle className="text-sm font-medium text-foreground">Ramp Orders</CardTitle>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => reconcile.mutate()}
+                  disabled={reconcile.isPending}
+                  className="h-8 border-border bg-secondary text-foreground"
+                >
+                  <RefreshCw className={`mr-1 size-3 ${reconcile.isPending ? "animate-spin" : ""}`} />
+                  {reconcile.isPending ? "Reconciling…" : "Reconcile Paycrest"}
+                </Button>
+              </div>
+
+              {/* Live result of the real POST /admin/reconcile/paycrest run */}
+              {reconcile.isError && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-2.5 text-xs text-destructive">
+                  <AlertCircle className="size-3.5" />
+                  Reconciliation failed. Please try again.
+                </div>
+              )}
+              {reconcile.data && (
+                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-2.5 text-xs">
+                  <span className="flex items-center gap-1.5 text-success">
+                    <CheckCircle2 className="size-3.5" /> Reconciliation complete
+                  </span>
+                  <span className="text-muted-foreground">Checked <span className="font-medium text-foreground">{reconcile.data.checked}</span></span>
+                  <span className="text-muted-foreground">Updated <span className="font-medium text-success">{reconcile.data.updated}</span></span>
+                  <span className="text-muted-foreground">Unchanged <span className="font-medium text-foreground">{reconcile.data.unchanged}</span></span>
+                  <span className="text-muted-foreground">Failed <span className="font-medium text-destructive">{reconcile.data.failed}</span></span>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="pt-0">
               <Table>
@@ -173,7 +209,7 @@ export function CashPage() {
                               {isOn ? "Onramp" : "Offramp"}
                             </span>
                           </TableCell>
-                          <TableCell className="text-sm font-mono text-foreground">{formatNaira(o.fiatAmount)}</TableCell>
+                          <TableCell className="text-sm font-mono text-foreground">{formatUsd(o.fiatAmount)}</TableCell>
                           <TableCell className="text-sm font-mono text-muted-foreground">{formatToken(o.cryptoAmount, o.asset)}</TableCell>
                           <TableCell>{rampStatusBadge(o.status)}</TableCell>
                           <TableCell className="text-right text-xs text-muted-foreground">{formatDate(o.createdAt)}</TableCell>

@@ -29,7 +29,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useLoans } from "@/hooks/useLoans"
 import { LoanStatusSort } from "@/types/admin"
-import { formatNaira, formatDate, formatPercent } from "@/lib/format"
+import { formatUsd, formatNaira, formatDate, formatPercent, userDisplayName } from "@/lib/format"
+
+// Loan principals come back as raw cNGN (6 decimals); divide to get the human
+// Naira figure, e.g. "700000000.00" → ₦700.
+const CNGN_DECIMALS = 1_000_000
+function loanAmountNaira(raw: string): string {
+  const n = Number(raw)
+  return Number.isFinite(n) ? formatNaira(n / CNGN_DECIMALS) : "—"
+}
 import {
   TableLoadingRows,
   TableEmptyRow,
@@ -167,12 +175,12 @@ export function LoansPage() {
                     <TableCell className="text-sm font-mono text-primary">{loan.loanId}</TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-sm text-foreground">{loan.user.name ?? "—"}</span>
+                        <span className="text-sm text-foreground">{userDisplayName(loan.user.name, loan.user.email)}</span>
                         <span className="text-xs text-muted-foreground">{loan.user.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm font-mono text-foreground">{formatNaira(loan.collateralAmount)}</TableCell>
-                    <TableCell className="text-sm font-mono text-foreground">{formatNaira(loan.loanAmount)}</TableCell>
+                    <TableCell className="text-sm font-mono text-foreground">{formatUsd(loan.collateralAmount)}</TableCell>
+                    <TableCell className="text-sm font-mono text-foreground">{loanAmountNaira(loan.loanAmount)}</TableCell>
                     <TableCell className="text-sm text-foreground">
                       {loan.interestRate !== null ? formatPercent(loan.interestRate) : "—"}
                     </TableCell>

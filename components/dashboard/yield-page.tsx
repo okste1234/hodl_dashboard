@@ -17,7 +17,7 @@ import { ChainBadge } from "@/components/dashboard/chain-badge"
 import { TableLoadingRows, TableEmptyRow } from "@/components/dashboard/data-state"
 import { useMockData } from "@/hooks/useMockData"
 import { userById } from "@/mocks/shared"
-import { formatNaira, formatPercent } from "@/lib/format"
+import { formatUsd, formatPercent } from "@/lib/format"
 import {
   YIELD_STATS,
   YIELD_PROTOCOLS,
@@ -60,7 +60,7 @@ export function YieldPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <StatCard label="Total Value Locked" value={s ? formatNaira(s.totalValueLockedUsd) : "—"} icon={Lock} isLoading={stats.isLoading} />
+        <StatCard label="Total Value Locked" value={s ? formatUsd(s.totalValueLockedUsd) : "—"} icon={Lock} isLoading={stats.isLoading} />
         <StatCard label="Active Positions" value={s ? s.activePositions.toLocaleString() : "—"} icon={Layers} tone="primary" isLoading={stats.isLoading} />
         <StatCard label="Enabled Protocols" value={s ? s.enabledProtocols.toLocaleString() : "—"} icon={Power} tone="success" isLoading={stats.isLoading} />
         <StatCard label="Avg APY" value={s ? `${s.avgApy}%` : "—"} icon={Percent} tone="primary" isLoading={stats.isLoading} />
@@ -107,7 +107,7 @@ export function YieldPage() {
                         <TableCell><ChainBadge chainKey={p.chainKey} /></TableCell>
                         <TableCell className="text-sm text-foreground">{p.asset}</TableCell>
                         <TableCell className="text-sm font-medium text-primary">{formatPercent(p.apy)}</TableCell>
-                        <TableCell className="text-sm font-mono text-foreground">{formatNaira(p.tvlUsd)}</TableCell>
+                        <TableCell className="text-sm font-mono text-foreground">{formatUsd(p.tvlUsd)}</TableCell>
                         <TableCell>{riskBadge(p.risk)}</TableCell>
                         <TableCell className="text-right">{protocolStatusBadge(p.status)}</TableCell>
                       </TableRow>
@@ -150,8 +150,8 @@ export function YieldPage() {
                           <TableCell className="text-sm text-foreground">{p.protocolName}</TableCell>
                           <TableCell><ChainBadge chainKey={p.chainKey} /></TableCell>
                           <TableCell className="text-sm text-foreground">{p.asset}</TableCell>
-                          <TableCell className="text-sm font-mono text-foreground">{formatNaira(p.balanceUsd)}</TableCell>
-                          <TableCell className="text-right text-sm font-mono text-success">{formatNaira(p.earnedUsd)}</TableCell>
+                          <TableCell className="text-sm font-mono text-foreground">{formatUsd(p.balanceUsd)}</TableCell>
+                          <TableCell className="text-right text-sm font-mono text-success">{formatUsd(p.earnedUsd)}</TableCell>
                         </TableRow>
                       )
                     })
