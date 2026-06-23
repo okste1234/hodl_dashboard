@@ -366,3 +366,49 @@ export interface BankFilters {
   limit?: number
   offset?: number
 }
+
+// ---------------------------------------------------------------------------
+// Yield Markets — GET /admin/yield/{positions,protocols}
+// ---------------------------------------------------------------------------
+
+export interface YieldStats {
+  totalValueLockedUsd: string
+  activePositions: number
+  depositors: number
+  totalEarnedUsd: string
+}
+
+export interface AdminYieldPosition {
+  id: string
+  user: MaybeUserRef
+  protocol: string
+  chain: string
+  asset: string
+  balanceUsd: string
+  earnedUsd: string
+  status: string
+  openedAt: string
+}
+
+export type YieldPositionsResponse = { stats: YieldStats } & Paginated<AdminYieldPosition>
+
+export interface YieldPositionsFilters {
+  status?: string
+  limit?: number
+  offset?: number
+}
+
+export interface AdminYieldProtocol {
+  protocol: string
+  chain: string
+  asset: string
+  tvlUsd: string
+  earnedUsd: string
+  positions: number
+  depositors: number
+}
+
+export interface YieldProtocolsResponse {
+  total: number
+  items: AdminYieldProtocol[]
+}
