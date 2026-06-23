@@ -412,3 +412,37 @@ export interface YieldProtocolsResponse {
   total: number
   items: AdminYieldProtocol[]
 }
+
+// ---------------------------------------------------------------------------
+// Wallets — GET /admin/wallets
+// ---------------------------------------------------------------------------
+
+export interface WalletStats {
+  totalWalletValueUsd: string
+  trackedWallets: number
+  distinctTokens: number
+  activeChains: number
+}
+
+export interface AdminWalletHolding {
+  id: string
+  user: MaybeUserRef
+  walletAddress: string | null
+  network: string
+  symbol: string
+  balance: string
+  usdValue: string
+}
+
+export type WalletHoldingsResponse = {
+  stats: WalletStats
+  /** Distinct networks present in the data — drives the chain filter. */
+  chains: string[]
+} & Paginated<AdminWalletHolding>
+
+export interface WalletFilters {
+  network?: string
+  search?: string
+  limit?: number
+  offset?: number
+}
