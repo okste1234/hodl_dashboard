@@ -284,3 +284,85 @@ export interface ReconciliationResult {
   failed: number
   details: ReconcileDetail[]
 }
+
+// ---------------------------------------------------------------------------
+// Cash & Ramps — GET /admin/cash/{virtual-accounts,ramps,linked-banks}
+// ---------------------------------------------------------------------------
+
+/** User ref that may be absent on a row (backend returns null when unlinked). */
+export type MaybeUserRef = UserRef | null
+
+export interface CashStats {
+  totalUsdHeld: string
+  activeAccounts: number
+  pendingRamps: number
+  rampVolume24hUsd: string
+}
+
+export interface AdminVirtualAccount {
+  id: string
+  user: MaybeUserRef
+  currency: string
+  status: string
+  bankName: string
+  accountNumberMasked: string | null
+  availableBalanceUsd: string
+  createdAt: string
+}
+
+export type VirtualAccountsResponse = { stats: CashStats } & Paginated<AdminVirtualAccount>
+
+export type RampDirection = "onramp" | "offramp"
+
+export interface RampReceiver {
+  name: string
+  accountNumberMasked: string | null
+  bankName: string
+  currency: string
+}
+
+export interface AdminRampOrder {
+  id: string
+  reference: string
+  transactionType: string
+  direction: RampDirection
+  provider: string | null
+  amount: string | null
+  tokenSymbol: string | null
+  fromTokenSymbol: string | null
+  toTokenSymbol: string | null
+  usdValue: string | null
+  status: string
+  user: MaybeUserRef
+  receiver: RampReceiver | null
+  createdAt: string
+}
+
+export type RampOrdersResponse = Paginated<AdminRampOrder>
+
+export interface RampFilters {
+  status?: string
+  limit?: number
+  offset?: number
+}
+
+export interface AdminLinkedBank {
+  id: string
+  user: MaybeUserRef
+  bankName: string
+  accountNumberMasked: string | null
+  accountName: string
+  currency: string
+  bankCode: string
+  bankType: string
+  status: string
+  createdAt: string
+}
+
+export type LinkedBanksResponse = Paginated<AdminLinkedBank>
+
+export interface BankFilters {
+  status?: string
+  limit?: number
+  offset?: number
+}

@@ -55,10 +55,10 @@ export function formatTokenAmount(
 
 /** Pick the symbol the backend returns for a transaction: swap legs first, else tokenSymbol. */
 export function txTokenSymbol(tx: {
-  fromTokenSymbol?: string
-  tokenSymbol?: string
+  fromTokenSymbol?: string | null
+  tokenSymbol?: string | null
 }): string | undefined {
-  return tx.fromTokenSymbol ?? tx.tokenSymbol
+  return tx.fromTokenSymbol ?? tx.tokenSymbol ?? undefined
 }
 
 /** Signed percentage for 24h-change style deltas, e.g. "+2.1%" / "-1.4%". */
