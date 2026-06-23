@@ -73,10 +73,10 @@ export function YieldPage() {
         <StatCard label="Total Earned" value={stats ? formatUsd(stats.totalEarnedUsd) : "—"} icon={Coins} tone="success" isLoading={positions.isLoading} />
       </div>
 
-      <Tabs defaultValue="protocols" className="w-full">
+      <Tabs defaultValue="positions" className="w-full">
         <TabsList className="bg-secondary border border-border">
-          <TabsTrigger value="protocols" className={tabTrigger}>Protocols</TabsTrigger>
           <TabsTrigger value="positions" className={tabTrigger}>Positions</TabsTrigger>
+          <TabsTrigger value="protocols" className={tabTrigger}>Protocols</TabsTrigger>
         </TabsList>
 
         {/* Protocols — aggregated from active positions */}
